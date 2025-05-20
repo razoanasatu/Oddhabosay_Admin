@@ -67,15 +67,25 @@ export default function EventFormPage() {
           />
         </div>
 
-        {/* Banner Photo Card with fixed image link */}
+        {/* Banner Photo Card with preview */}
         <div className="flex flex-col w-full md:w-1/2">
           <label className="mb-1 font-medium">Choose Banner (Photo)</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleBannerChange}
+            className="mb-2"
+          />
           <div className="p-3 rounded border border-gray-300 flex justify-center items-center h-40 bg-white">
-            <img
-              src="Event.png" // replace this with your actual image URL
-              alt="Banner"
-              className="max-h-full object-contain"
-            />
+            {bannerPreview ? (
+              <img
+                src={bannerPreview}
+                alt="Banner Preview"
+                className="max-h-full object-contain"
+              />
+            ) : (
+              <span className="text-gray-400">No image selected</span>
+            )}
           </div>
         </div>
 

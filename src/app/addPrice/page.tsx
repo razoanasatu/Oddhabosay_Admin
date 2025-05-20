@@ -5,7 +5,7 @@ import { useState } from "react";
 export default function AddPriceList() {
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
-  const [upToUser, setUpToUser] = useState(false);
+  const [upToUser, setUpToUser] = useState("");
   const [description, setDescription] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -79,6 +79,8 @@ export default function AddPriceList() {
           </label>
           <input
             type="text"
+            value={upToUser}
+            onChange={(e) => setUpToUser(e.target.value)}
             placeholder="Top 10 up to User 100"
             className="border border-gray-300 rounded-md p-2 mt-1"
           />
