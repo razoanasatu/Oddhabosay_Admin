@@ -36,7 +36,7 @@ const names = [
 
 export default function WinALaptop() {
   const [users, setUsers] = useState<UserData[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const searchQuery = "";
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 10;
 
