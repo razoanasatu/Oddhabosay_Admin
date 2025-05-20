@@ -1,22 +1,25 @@
 "use client";
+
 import clsx from "clsx";
 import Image from "next/image";
-import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 import { FaBars, FaBell, FaTimes } from "react-icons/fa";
 import { FiSearch } from "react-icons/fi";
 
 const navItems = [
-  { label: "Dashboard" },
-  { label: "All Users" },
-  { label: "Global Board" },
-  { label: "Challenges" },
-  { label: "Add Exam" },
-  { label: "Add Questions" },
-  { label: "Add Price List" },
-  { label: "Special Events" },
-  { label: "Win a Laptop" },
-  { label: "More" },
+  { label: "Dashboard", href: "/" },
+  { label: "All Users", href: "/allUsers" },
+  { label: "Global Board", href: "/globalBoard" },
+  { label: "Challenges", href: "/challengesPage" },
+  { label: "Add Exam", href: "/addExam" },
+  { label: "Add Questions", href: "/addQuestion" },
+  { label: "Add Price List", href: "/addPrice" },
+  { label: "Special Events", href: "/specialEvent" },
+  { label: "Win a Laptop", href: "/winLaptop" },
+  { label: "More", href: "/admin/more" },
 ];
 
 export default function AdminLayout({
@@ -25,6 +28,12 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true); // only true after hydration
+  }, []);
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -48,19 +57,24 @@ export default function AdminLayout({
           <Image src="/logo.png" alt="Logo" width={120} height={40} />
         </div>
 
-        {/* Nav Items Centered */}
+        {/* Nav Items */}
         <nav className="flex-1 flex flex-col justify-center px-4 space-y-4">
-          {navItems.map((item) => (
-            <div
-              key={item.label}
-              className={clsx(
-                "text-white hover:bg-gray-700 p-2 rounded cursor-pointer px-10 ",
-                item.label === "Challenges" && "bg-purple-600"
-              )}
-            >
-              <span>{item.label}</span>
-            </div>
-          ))}
+          {navItems.map((item) => {
+            const isActive = isClient && pathname === item.href;
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                className={clsx(
+                  "text-white hover:bg-gray-700 p-2 rounded cursor-pointer px-10 block",
+                  isActive && "bg-purple-600"
+                )}
+                onClick={() => setSidebarOpen(false)}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
       </div>
 
@@ -77,7 +91,7 @@ export default function AdminLayout({
               <FaBars size={24} />
             </button>
 
-            {/* Search Input and Button with no gap */}
+            {/* Search Input */}
             <div className="flex items-center w-full max-w-sm">
               <div className="flex items-center bg-blue-100 px-3 py-2 rounded-l-sm flex-grow">
                 <FiSearch className="text-gray-500" />
@@ -96,7 +110,6 @@ export default function AdminLayout({
           {/* Notification and Profile */}
           <div className="flex items-center space-x-4">
             <FaBell size={20} className="text-purple-600 cursor-pointer" />
-
             <div className="flex items-center space-x-2">
               <Image
                 src="/profile.png"
