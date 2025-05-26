@@ -1,6 +1,52 @@
 "use client";
+import { baseUrl } from "@/utils/constant";
+import { useState } from "react";
 
 export default function AddQuestion() {
+  const [question, setQuestion] = useState("");
+  const [answers, setAnswers] = useState(["", "", "", ""]);
+  const [correctAnswer, setCorrectAnswer] = useState(0);
+  const [subjectId, setSubjectId] = useState(3);
+  const [eligibilityFlag, setEligibilityFlag] = useState(["weekly"]);
+  const [score, setScore] = useState(10);
+
+  const handleAnswerChange = (index: number, value: string) => {
+    const updatedAnswers = [...answers];
+    updatedAnswers[index] = value;
+    setAnswers(updatedAnswers);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const payload = {
+      question,
+      answers,
+      correct_answer: correctAnswer,
+      subjectId,
+      eligibility_flag: eligibilityFlag,
+      score,
+    };
+
+    console.log("Submitting payload:", payload);
+
+    try {
+      const res = await fetch(`${baseUrl}/api/question-bank/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        alert("Question submitted successfully!");
+      } else {
+        alert("Submission failed.");
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+    }
+  };
+
   return (
     <div className="p-4 md:px-2 w-full min-h-screen">
       {/* Header */}
@@ -13,125 +59,64 @@ export default function AddQuestion() {
         </div>
       </div>
 
-      {/* Form Body */}
-      <form className="bg-white shadow-md rounded-md pt-4 px-12 pb-4 space-y-4 w-full min-h-[calc(100vh-10rem)] border border-purple-200">
-        {/* Spacer before first input */}
-        <div className="h-1" />
-
-        {/* Challenge Name */}
+      {/* Form */}
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white shadow-md rounded-md pt-4 px-12 pb-4 space-y-4 w-full min-h-[calc(100vh-10rem)] border border-purple-200"
+      >
+        {/* Question Name */}
         <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">Exam Name</label>
+          <label className="text-sm font-medium text-gray-700">Question</label>
           <input
             type="text"
-            placeholder="Exam Name"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            placeholder="Enter the question"
             className="border border-gray-300 rounded-md p-2 mt-1"
           />
         </div>
 
-        {/* Select Challenge Category */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">
-            Select Challenge Category
-          </label>
-          <select
-            defaultValue=""
-            className="border border-gray-300 rounded-md p-2 mt-1 text-gray-700"
-          >
-            <option value="" disabled>
-              Choose Category
-            </option>
-            <option value="coding">Coding</option>
-            <option value="design">Design</option>
-            <option value="quiz">Quiz</option>
-            <option value="sports">Sports</option>
-          </select>
-        </div>
+        {/* Options */}
+        {answers.map((answer, index) => (
+          <div key={index} className="flex flex-col w-full md:w-1/2">
+            <label className="text-sm font-medium text-gray-700">
+              Option {index + 1}
+            </label>
+            <input
+              type="text"
+              value={answer}
+              onChange={(e) => handleAnswerChange(index, e.target.value)}
+              placeholder={`Option ${index + 1}`}
+              className="border border-gray-300 rounded-md p-2 mt-1"
+            />
+          </div>
+        ))}
 
-        {/* Total Marks */}
+        {/* Correct Answer Index */}
         <div className="flex flex-col w-full md:w-1/2">
           <label className="text-sm font-medium text-gray-700">
-            Total Marks
+            Correct Answer (Index starting from 0)
           </label>
           <input
             type="number"
-            defaultValue={100}
+            value={correctAnswer}
+            onChange={(e) => setCorrectAnswer(Number(e.target.value))}
             className="border border-gray-300 rounded-md p-2 mt-1"
           />
         </div>
 
-        {/* Duration */}
+        {/* Score */}
         <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">Duration</label>
+          <label className="text-sm font-medium text-gray-700">Score</label>
           <input
-            type="text"
-            defaultValue="2 minutes"
+            type="number"
+            value={score}
+            onChange={(e) => setScore(Number(e.target.value))}
             className="border border-gray-300 rounded-md p-2 mt-1"
           />
         </div>
 
-        {/* Question No. */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">
-            Question No.
-          </label>
-          <input
-            type="text"
-            placeholder="Question No."
-            className="border border-gray-300 rounded-md p-2 mt-1"
-          />
-        </div>
-
-        {/* Questions Name */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">
-            Questions Name
-          </label>
-          <input
-            type="text"
-            placeholder="Question Name"
-            className="border border-gray-300 rounded-md p-2 mt-1"
-          />
-        </div>
-
-        {/* Add Options */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">
-            Add Options
-          </label>
-          <input
-            type="text"
-            placeholder="A. Option 01"
-            className="border border-gray-300 rounded-md p-2 mt-1"
-          />
-        </div>
-
-        {/* Add Options */}
-        <div className="flex flex-col w-full md:w-1/2 relative">
-          <label className="text-sm font-medium text-gray-700">
-            Add Options
-          </label>
-          <input
-            type="text"
-            placeholder="A. Option 01"
-            className="border border-gray-300 rounded-md p-2 mt-1"
-          />
-
-          {/* Add More Options clickable text */}
-          <div className="flex justify-end mt-2">
-            <button
-              type="button"
-              className="text-purple-600 text-sm hover:underline"
-              onClick={() => {
-                // Add logic to handle adding more options
-                console.log("Add More Options clicked");
-              }}
-            >
-              Add More Options
-            </button>
-          </div>
-        </div>
-
-        {/* Add Save Button */}
+        {/* Submit Button */}
         <div className="flex flex-col w-full md:w-1/2">
           <button
             type="submit"
@@ -140,9 +125,6 @@ export default function AddQuestion() {
             Save
           </button>
         </div>
-
-        {/* Spacer after last input */}
-        <div className="h-4" />
       </form>
     </div>
   );
