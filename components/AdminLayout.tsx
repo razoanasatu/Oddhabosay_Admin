@@ -4,7 +4,7 @@ import clsx from "clsx";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { FaBars, FaBell, FaTimes } from "react-icons/fa";
 import { FiSearch } from "react-icons/fi";
@@ -27,13 +27,8 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true); // only true after hydration
-  }, []);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -60,7 +55,7 @@ export default function AdminLayout({
         {/* Nav Items */}
         <nav className="flex-1 flex flex-col justify-center px-4 space-y-4">
           {navItems.map((item) => {
-            const isActive = isClient && pathname === item.href;
+            const isActive = pathname === item.href;
             return (
               <Link
                 key={item.label}
