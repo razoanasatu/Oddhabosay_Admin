@@ -1,14 +1,36 @@
 "use client";
 import { baseUrl } from "@/utils/constant";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function AddQuestion() {
   const [question, setQuestion] = useState("");
   const [answers, setAnswers] = useState(["", "", "", ""]);
   const [correctAnswer, setCorrectAnswer] = useState(0);
-  const [subjectId, setSubjectId] = useState(3);
+  const [subjectId, setSubjectId] = useState<number | null>(null);
   const [eligibilityFlag, setEligibilityFlag] = useState(["weekly"]);
   const [score, setScore] = useState(10);
+  const [subjects, setSubjects] = useState<{ id: number; name: string }[]>([]);
+
+  // Fetch subjects on component mount
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/api/subjects`);
+        const json = await res.json();
+
+        if (json.success && Array.isArray(json.data)) {
+          setSubjects(json.data);
+          if (json.data.length > 0) setSubjectId(json.data[0].id); // default selection
+        } else {
+          console.error("Invalid subject response format");
+        }
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+      }
+    };
+
+    fetchSubjects();
+  }, []);
 
   const handleAnswerChange = (index: number, value: string) => {
     const updatedAnswers = [...answers];
@@ -18,6 +40,10 @@ export default function AddQuestion() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (subjectId === null) {
+      alert("Please select a subject.");
+      return;
+    }
 
     const payload = {
       question,
@@ -64,7 +90,7 @@ export default function AddQuestion() {
         onSubmit={handleSubmit}
         className="bg-white shadow-md rounded-md pt-4 px-12 pb-4 space-y-4 w-full min-h-[calc(100vh-10rem)] border border-purple-200"
       >
-        {/* Question Name */}
+        {/* Question */}
         <div className="flex flex-col w-full md:w-1/2">
           <label className="text-sm font-medium text-gray-700">Question</label>
           <input
@@ -92,7 +118,7 @@ export default function AddQuestion() {
           </div>
         ))}
 
-        {/* Correct Answer Index */}
+        {/* Correct Answer */}
         <div className="flex flex-col w-full md:w-1/2">
           <label className="text-sm font-medium text-gray-700">
             Correct Answer (Index starting from 0)
@@ -116,38 +142,53 @@ export default function AddQuestion() {
           />
         </div>
 
-        {/* Subject ID */}
+        {/* Subject Dropdown */}
         <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">
-            Subject ID
-          </label>
-          <input
-            type="number"
-            value={subjectId}
+          <label className="text-sm font-medium text-gray-700">Subject</label>
+          <select
+            value={subjectId ?? ""}
             onChange={(e) => setSubjectId(Number(e.target.value))}
             className="border border-gray-300 rounded-md p-2 mt-1"
-          />
+          >
+            {subjects.map((subject) => (
+              <option key={subject.id} value={subject.id}>
+                {subject.name}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {/* Eligibility Flag */}
+        {/* Eligibility Flags */}
         <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">
-            Eligibility Flag
+          <label className="text-sm font-medium text-gray-700 mb-1">
+            Eligibility Flags
           </label>
-          <input
-            type="text"
-            value={eligibilityFlag.join(", ")}
-            onChange={(e) =>
-              setEligibilityFlag(
-                e.target.value
-                  .split(",")
-                  .map((flag) => flag.trim())
-                  .filter((flag) => flag.length > 0)
+          <div className="flex flex-col space-y-1">
+            {["weekly", "monthly", "mega", "special_event", "practice"].map(
+              (flag) => (
+                <label
+                  key={flag}
+                  className="inline-flex items-center space-x-2"
+                >
+                  <input
+                    type="checkbox"
+                    value={flag}
+                    checked={eligibilityFlag.includes(flag)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setEligibilityFlag((prev) =>
+                        prev.includes(value)
+                          ? prev.filter((item) => item !== value)
+                          : [...prev, value]
+                      );
+                    }}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm text-gray-800">{flag}</span>
+                </label>
               )
-            }
-            placeholder="e.g., weekly, monthly"
-            className="border border-gray-300 rounded-md p-2 mt-1"
-          />
+            )}
+          </div>
         </div>
 
         {/* Submit Button */}
