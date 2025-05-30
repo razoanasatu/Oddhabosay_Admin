@@ -116,6 +116,40 @@ export default function AddQuestion() {
           />
         </div>
 
+        {/* Subject ID */}
+        <div className="flex flex-col w-full md:w-1/2">
+          <label className="text-sm font-medium text-gray-700">
+            Subject ID
+          </label>
+          <input
+            type="number"
+            value={subjectId}
+            onChange={(e) => setSubjectId(Number(e.target.value))}
+            className="border border-gray-300 rounded-md p-2 mt-1"
+          />
+        </div>
+
+        {/* Eligibility Flag */}
+        <div className="flex flex-col w-full md:w-1/2">
+          <label className="text-sm font-medium text-gray-700">
+            Eligibility Flag
+          </label>
+          <input
+            type="text"
+            value={eligibilityFlag.join(", ")}
+            onChange={(e) =>
+              setEligibilityFlag(
+                e.target.value
+                  .split(",")
+                  .map((flag) => flag.trim())
+                  .filter((flag) => flag.length > 0)
+              )
+            }
+            placeholder="e.g., weekly, monthly"
+            className="border border-gray-300 rounded-md p-2 mt-1"
+          />
+        </div>
+
         {/* Submit Button */}
         <div className="flex flex-col w-full md:w-1/2">
           <button
