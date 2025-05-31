@@ -3,13 +3,20 @@ import { baseUrl } from "@/utils/constant";
 import { Edit, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
+// Define Subject type properly
+type Question = {
+  id: string;
+  // Add other fields if needed
+};
+
 type Subject = {
   id: string;
   name: string;
-  // Add other fields as needed
+  questions?: Question[];
 };
+
 const SubjectManagement = () => {
-  const [subjects, setSubjects] = useState([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -18,7 +25,6 @@ const SubjectManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Fetch subjects list
   const fetchSubjects = async () => {
     setLoading(true);
     try {
@@ -37,7 +43,6 @@ const SubjectManagement = () => {
     }
   };
 
-  // Create subject
   const createSubject = async () => {
     if (!formData.name.trim()) {
       setError("Subject name is required");
@@ -48,9 +53,7 @@ const SubjectManagement = () => {
     try {
       const response = await fetch(`${baseUrl}/api/subjects`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
@@ -71,7 +74,6 @@ const SubjectManagement = () => {
     }
   };
 
-  // Update subject
   const updateSubject = async () => {
     if (!formData.name.trim()) {
       setError("Subject name is required");
@@ -84,9 +86,7 @@ const SubjectManagement = () => {
         `${baseUrl}/api/subjects/${selectedSubject?.id}`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formData),
         }
       );
@@ -109,7 +109,6 @@ const SubjectManagement = () => {
     }
   };
 
-  // Delete subject
   const deleteSubject = async () => {
     setLoading(true);
     try {
@@ -136,29 +135,25 @@ const SubjectManagement = () => {
     }
   };
 
-  // Handle edit click
-  const handleEdit = (subject: any) => {
+  const handleEdit = (subject: Subject) => {
     setSelectedSubject(subject);
     setFormData({ name: subject.name });
     setShowEditModal(true);
     setError("");
   };
 
-  // Handle delete click
-  const handleDelete = (subject: any) => {
+  const handleDelete = (subject: Subject) => {
     setSelectedSubject(subject);
     setShowDeleteModal(true);
     setError("");
   };
 
-  // Handle create click
   const handleCreate = () => {
     setFormData({ name: "" });
     setShowCreateModal(true);
     setError("");
   };
 
-  // Load subjects on component mount
   useEffect(() => {
     fetchSubjects();
   }, []);
@@ -180,7 +175,7 @@ const SubjectManagement = () => {
           </button>
         </div>
 
-        {/* Error Display */}
+        {/* Error */}
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
             {error}
@@ -226,7 +221,7 @@ const SubjectManagement = () => {
                   </td>
                 </tr>
               ) : (
-                subjects.map((subject: any) => (
+                subjects.map((subject: Subject) => (
                   <tr key={subject.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {subject.id}
@@ -375,8 +370,8 @@ const SubjectManagement = () => {
               </div>
               <div className="p-6">
                 <p className="text-gray-700 mb-6">
-                  Are you sure you want to delete the subject "
-                  {selectedSubject?.name}"? This action cannot be undone.
+                  Are you sure you want to delete the subject &quot;
+                  {selectedSubject?.name}&quot;? This action cannot be undone.
                 </p>
                 <div className="flex gap-3 justify-end">
                   <button
