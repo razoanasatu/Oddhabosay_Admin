@@ -3,7 +3,14 @@ import { baseUrl } from "@/utils/constant";
 import { useState } from "react";
 
 export default function AddPrizeDetails() {
-  const [prizePositions, setPrizePositions] = useState([
+  interface PrizePosition {
+    position: string;
+    prize_money: number;
+    user_number: number;
+    limit: number;
+  }
+
+  const [prizePositions, setPrizePositions] = useState<PrizePosition[]>([
     { position: "", prize_money: 0, user_number: 0, limit: 0 },
   ]);
 
@@ -13,12 +20,14 @@ export default function AddPrizeDetails() {
 
   const handlePrizeChange = (
     index: number,
-    field: string,
+    field: keyof PrizePosition,
     value: string | number
   ) => {
     const updated = [...prizePositions];
-    (updated[index] as any)[field] =
-      field === "position" ? value : Number(value);
+    updated[index] = {
+      ...updated[index],
+      [field]: field === "position" ? value : Number(value),
+    };
     setPrizePositions(updated);
   };
 
