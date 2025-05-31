@@ -28,6 +28,11 @@ type SpecialEvent = {
 };
 
 export default function CreateChallenge() {
+  interface ApiResponse<T> {
+    success: boolean;
+    data: T;
+  }
+
   const [challengeType, setChallengeType] = useState("weekly");
   const [fee, setFee] = useState<number>(0);
   const [deadline, setDeadline] = useState("");
@@ -57,31 +62,31 @@ export default function CreateChallenge() {
   useEffect(() => {
     fetch(`${baseUrl}/api/question-bank`)
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: ApiResponse<Question[]>) => {
         if (data.success) setQuestions(data.data);
       });
 
     fetch(`${baseUrl}/api/prize-details`)
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: ApiResponse<PrizeDetail[]>) => {
         if (data.success) setPrizeDetails(data.data);
       });
 
     fetch(`${baseUrl}/api/challenge-requirement`)
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: ApiResponse<ChallengeRequirement[]>) => {
         if (data.success) setChallengeRequirements(data.data);
       });
 
     fetch(`${baseUrl}/api/challenge-rules`)
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: ApiResponse<Rule[]>) => {
         if (data.success) setRules(data.data);
       });
 
     fetch(`${baseUrl}/api/special-event`)
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: ApiResponse<SpecialEvent[]>) => {
         if (data.success) setEvents(data.data);
       });
   }, []);
