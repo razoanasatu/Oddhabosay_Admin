@@ -7,9 +7,21 @@ type Question = {
   question: string;
 };
 
+type PrizePosition = {
+  position: string;
+  prize_money: number;
+  user_number: number;
+  limit: number;
+};
+
 type PrizeDetail = {
   id: number;
-  prize_positions: any[]; // simplified for now
+  prize_positions: PrizePosition[];
+  global_board: boolean;
+  monthly_eligibility: number;
+  weekly_eligibility: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 type ChallengeRequirement = {
