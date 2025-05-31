@@ -17,7 +17,7 @@ const navItems = [
   { label: "Add Exam", href: "/addExam" },
   { label: "Add Subject", href: "/addSubjects" },
   { label: "Add Questions", href: "/addQuestion" },
-  { label: "Add Price List", href: "/addPrice" },
+  { label: "Prize Details", href: "/prizeDetails" },
   { label: "Special Events", href: "/specialEvent" },
   { label: "Win a Laptop", href: "/winLaptop" },
   { label: "More", href: "/admin/more" },
