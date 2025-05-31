@@ -1,118 +1,410 @@
 "use client";
+import { baseUrl } from "@/utils/constant";
+import React, { useEffect, useState } from "react";
 
-export default function AddExam() {
+type Question = {
+  id: number;
+  question: string;
+};
+
+type PrizeDetail = {
+  id: number;
+  prize_positions: any[]; // simplified for now
+};
+
+type ChallengeRequirement = {
+  id: number;
+  title: string;
+};
+
+type Rule = {
+  id: number;
+  title: string;
+};
+
+type SpecialEvent = {
+  id: number;
+  title: string;
+};
+
+export default function CreateChallenge() {
+  const [challengeType, setChallengeType] = useState("weekly");
+  const [fee, setFee] = useState<number>(0);
+  const [deadline, setDeadline] = useState("");
+  const [activeStatus, setActiveStatus] = useState(true);
+  const [questionIds, setQuestionIds] = useState<number[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [prizeDetailsIds, setPrizeDetailsIds] = useState<number[]>([]);
+  const [prizeDetails, setPrizeDetails] = useState<PrizeDetail[]>([]);
+  const [challengeRequirementId, setChallengeRequirementId] = useState<
+    number | ""
+  >("");
+  const [challengeRequirements, setChallengeRequirements] = useState<
+    ChallengeRequirement[]
+  >([]);
+  const [ruleId, setRuleId] = useState<number | "">("");
+  const [rules, setRules] = useState<Rule[]>([]);
+  const [eventCode, setEventCode] = useState("");
+  const [eventId, setEventId] = useState<number | "">("");
+  const [events, setEvents] = useState<SpecialEvent[]>([]);
+  const [startDatetime, setStartDatetime] = useState("");
+  const [endDatetime, setEndDatetime] = useState("");
+  const [totalMarks, setTotalMarks] = useState<number>(0);
+  const [totalSeats, setTotalSeats] = useState<number>(0);
+  const [quizTime, setQuizTime] = useState<number>(0);
+
+  // Fetch APIs on mount
+  useEffect(() => {
+    fetch(`${baseUrl}/api/question-bank`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setQuestions(data.data);
+      });
+
+    fetch(`${baseUrl}/api/prize-details`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setPrizeDetails(data.data);
+      });
+
+    fetch(`${baseUrl}/api/challenge-requirement`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setChallengeRequirements(data.data);
+      });
+
+    fetch(`${baseUrl}/api/challenge-rules`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setRules(data.data);
+      });
+
+    fetch(`${baseUrl}/api/special-event`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setEvents(data.data);
+      });
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (challengeType === "special_event" && (!eventCode || !eventId)) {
+      alert("Event Code and Event ID are required for Special Event.");
+      return;
+    }
+
+    const payload = {
+      challenge_type: challengeType,
+      fee,
+      deadline,
+      active_status: activeStatus,
+      questionIds,
+      prizeDetailsIds,
+      challengeRequirementId,
+      ruleId,
+      event_code: challengeType === "special_event" ? eventCode : undefined,
+      eventId: challengeType === "special_event" ? eventId : undefined,
+      start_datetime: startDatetime,
+      end_datetime: endDatetime,
+      total_marks: totalMarks,
+      total_seats: totalSeats,
+      quiz_time: quizTime,
+    };
+
+    try {
+      const res = await fetch(`${baseUrl}/api/challenges/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        alert("Challenge created successfully.");
+      } else {
+        alert("Failed to create challenge.");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred.");
+    }
+  };
+
   return (
-    <div className="p-4 md:px-2 w-full min-h-screen">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
-          <h1 className="text-black text-xl font-bold">Add Exam</h1>
-          <button className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
-            See All Weekly Challenges
-          </button>
+    <div className="p-4 max-w-4xl mx-auto min-h-screen">
+      <h1 className="text-2xl font-bold mb-6">Create Challenge</h1>
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-6 bg-white p-6 rounded shadow"
+      >
+        {/* Challenge Type */}
+        <div>
+          <label className="block mb-1 font-medium">Challenge Type</label>
+          <select
+            value={challengeType}
+            onChange={(e) => setChallengeType(e.target.value)}
+            className="border border-gray-300 rounded p-2 w-full max-w-sm"
+          >
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="mega">Mega</option>
+            <option value="special_event">Special Event</option>
+          </select>
         </div>
-        <button className="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
-          Add Price List
-        </button>
-      </div>
 
-      {/* Form Body */}
-      <form className="bg-white shadow-md rounded-md pt-4 px-12 pb-4 space-y-4 w-full min-h-[calc(100vh-10rem)] border border-purple-200">
-        {/* Spacer before first input */}
-        <div className="h-1" />
-
-        {/* Challenge Name */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">
-            Challenge Name
-          </label>
+        {/* Fee */}
+        <div>
+          <label className="block mb-1 font-medium">Fee</label>
           <input
-            type="text"
-            placeholder="Enter Challenge Name"
-            className="border border-gray-300 rounded-md p-2 mt-1"
+            type="number"
+            value={fee}
+            onChange={(e) => setFee(Number(e.target.value))}
+            className="border border-gray-300 rounded p-2 w-full max-w-sm"
+            min={0}
           />
         </div>
 
-        {/* Available Seats */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">
-            Available Seats
-          </label>
+        {/* Deadline */}
+        <div>
+          <label className="block mb-1 font-medium">Deadline</label>
           <input
-            type="number"
-            defaultValue={100000}
-            className="border border-gray-300 rounded-md p-2 mt-1"
+            type="datetime-local"
+            value={deadline}
+            onChange={(e) => setDeadline(e.target.value)}
+            className="border border-gray-300 rounded p-2 w-full max-w-sm"
+          />
+        </div>
+
+        {/* Active Status */}
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={activeStatus}
+            onChange={(e) => setActiveStatus(e.target.checked)}
+            id="activeStatus"
+          />
+          <label htmlFor="activeStatus" className="font-medium">
+            Active Status
+          </label>
+        </div>
+        {/* Select Questions - Custom Multi-Select */}
+        <div>
+          <label className="block mb-1 font-medium">Select Questions</label>
+
+          {/* Selected Tags */}
+          <div className="flex flex-wrap gap-2 mb-2">
+            {questionIds.map((id) => {
+              const question = questions.find((q) => q.id === id);
+              return (
+                <span
+                  key={id}
+                  className="flex items-center bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm"
+                >
+                  {question?.question || `Question ${id}`}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setQuestionIds(questionIds.filter((qId) => qId !== id))
+                    }
+                    className="ml-2 text-purple-600 hover:text-purple-900"
+                  >
+                    &times;
+                  </button>
+                </span>
+              );
+            })}
+          </div>
+
+          {/* Dropdown */}
+          <select
+            value=""
+            onChange={(e) => {
+              const selectedId = Number(e.target.value);
+              if (!questionIds.includes(selectedId)) {
+                setQuestionIds([...questionIds, selectedId]);
+              }
+            }}
+            className="border border-gray-300 rounded p-2 w-full max-w-lg"
+          >
+            <option value="" disabled>
+              Select a question
+            </option>
+            {questions
+              .filter((q) => !questionIds.includes(q.id))
+              .map((q) => (
+                <option key={q.id} value={q.id}>
+                  {q.question}
+                </option>
+              ))}
+          </select>
+        </div>
+
+        {/* Prize Details (Single-select but stored as array) */}
+        <div>
+          <label className="block mb-1 font-medium">Prize Details</label>
+          <select
+            value={prizeDetailsIds.length > 0 ? String(prizeDetailsIds[0]) : ""}
+            onChange={(e) => {
+              const selectedId = Number(e.target.value);
+              setPrizeDetailsIds([selectedId]); // Wrap in array
+            }}
+            className="border border-gray-300 rounded p-2 w-full max-w-lg"
+          >
+            <option value="" disabled>
+              Select a prize detail
+            </option>
+            {prizeDetails.map((p, idx) => (
+              <option key={idx} value={p.id}>
+                Prize Detail {p.id}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Challenge Requirement */}
+        <div>
+          <label className="block mb-1 font-medium">
+            Challenge Requirement
+          </label>
+          <select
+            value={
+              challengeRequirementId === ""
+                ? ""
+                : String(challengeRequirementId)
+            }
+            onChange={(e) => setChallengeRequirementId(Number(e.target.value))}
+            className="border border-gray-300 rounded p-2 w-full max-w-sm"
+          >
+            <option value="" disabled>
+              Select requirement
+            </option>
+            {challengeRequirements.map((req) => (
+              <option key={req.id} value={req.id}>
+                {req.title || `Requirement ${req.id}`}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Rule */}
+        <div>
+          <label className="block mb-1 font-medium">Rule</label>
+          <select
+            value={ruleId === "" ? "" : String(ruleId)}
+            onChange={(e) => setRuleId(Number(e.target.value))}
+            className="border border-gray-300 rounded p-2 w-full max-w-sm"
+          >
+            <option value="" disabled>
+              Select rule
+            </option>
+            {rules.map((rule) => (
+              <option key={rule.id} value={rule.id}>
+                {rule.title || `Rule ${rule.id}`}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Special Event Fields */}
+        {challengeType === "special_event" && (
+          <>
+            <div>
+              <label className="block mb-1 font-medium">Event Code</label>
+              <input
+                type="text"
+                value={eventCode}
+                onChange={(e) => setEventCode(e.target.value)}
+                className="border border-gray-300 rounded p-2 w-full max-w-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block mb-1 font-medium">Event</label>
+              <select
+                value={eventId === "" ? "" : String(eventId)}
+                onChange={(e) => setEventId(Number(e.target.value))}
+                className="border border-gray-300 rounded p-2 w-full max-w-sm"
+              >
+                <option value="" disabled>
+                  Select event
+                </option>
+                {events.map((ev) => (
+                  <option key={ev.id} value={ev.id}>
+                    {ev.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
+        )}
+
+        {/* Start DateTime */}
+        <div>
+          <label className="block mb-1 font-medium">Start Date & Time</label>
+          <input
+            type="datetime-local"
+            value={startDatetime}
+            onChange={(e) => setStartDatetime(e.target.value)}
+            className="border border-gray-300 rounded p-2 w-full max-w-sm"
+          />
+        </div>
+
+        {/* End DateTime */}
+        <div>
+          <label className="block mb-1 font-medium">End Date & Time</label>
+          <input
+            type="datetime-local"
+            value={endDatetime}
+            onChange={(e) => setEndDatetime(e.target.value)}
+            className="border border-gray-300 rounded p-2 w-full max-w-sm"
           />
         </div>
 
         {/* Total Marks */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">
-            Total Marks
-          </label>
+        <div>
+          <label className="block mb-1 font-medium">Total Marks</label>
           <input
             type="number"
-            defaultValue={100}
-            className="border border-gray-300 rounded-md p-2 mt-1"
+            value={totalMarks}
+            onChange={(e) => setTotalMarks(Number(e.target.value))}
+            className="border border-gray-300 rounded p-2 w-full max-w-sm"
+            min={0}
           />
         </div>
 
-        {/* Duration */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">Duration</label>
-          <input
-            type="text"
-            defaultValue="2 minutes"
-            className="border border-gray-300 rounded-md p-2 mt-1"
-          />
-        </div>
-
-        {/* Start Time */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">
-            Start Time
-          </label>
-          <input
-            type="text"
-            defaultValue="14 March, 2025, 10:00 am"
-            className="border border-gray-300 rounded-md p-2 mt-1"
-          />
-        </div>
-
-        {/* End Time */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">End Time</label>
-          <input
-            type="text"
-            defaultValue="06:00 pm"
-            className="border border-gray-300 rounded-md p-2 mt-1"
-          />
-        </div>
-
-        {/* Registration Fee */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">
-            Registration Fee
-          </label>
+        {/* Total Seats */}
+        <div>
+          <label className="block mb-1 font-medium">Total Seats</label>
           <input
             type="number"
-            defaultValue={100}
-            className="border border-gray-300 rounded-md p-2 mt-1"
+            value={totalSeats}
+            onChange={(e) => setTotalSeats(Number(e.target.value))}
+            className="border border-gray-300 rounded p-2 w-full max-w-sm"
+            min={0}
           />
         </div>
 
-        {/* Add Challenge Button */}
-        <div className="flex flex-col w-full md:w-1/2">
+        {/* Quiz Time (minutes) */}
+        <div>
+          <label className="block mb-1 font-medium">Quiz Time (minutes)</label>
+          <input
+            type="number"
+            value={quizTime}
+            onChange={(e) => setQuizTime(Number(e.target.value))}
+            className="border border-gray-300 rounded p-2 w-full max-w-sm"
+            min={0}
+          />
+        </div>
+
+        {/* Submit Button */}
+        <div>
           <button
             type="submit"
-            className="bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-sm px-8 py-2 transition self-start ml-8"
+            className="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700 transition"
           >
-            Save
+            Create Challenge
           </button>
         </div>
-
-        {/* Spacer after last input */}
-        <div className="h-4" />
       </form>
     </div>
   );
