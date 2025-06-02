@@ -1,206 +1,394 @@
 "use client";
+
 import { baseUrl } from "@/utils/constant";
+import { Edit, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
-export default function AddQuestion() {
-  const [question, setQuestion] = useState("");
-  const [answers, setAnswers] = useState(["", "", "", ""]);
-  const [correctAnswer, setCorrectAnswer] = useState(0);
-  const [subjectId, setSubjectId] = useState<number | null>(null);
-  const [eligibilityFlag, setEligibilityFlag] = useState(["weekly"]);
-  const [score, setScore] = useState(10);
-  const [subjects, setSubjects] = useState<{ id: number; name: string }[]>([]);
+type Subject = {
+  id: number;
+  name: string;
+};
 
-  // Fetch subjects on component mount
-  useEffect(() => {
-    const fetchSubjects = async () => {
-      try {
-        const res = await fetch(`${baseUrl}/api/subjects`);
-        const json = await res.json();
+type Question = {
+  id: number;
+  question: string;
+  answers: string[];
+  correct_answer: number;
+  subjectId: number;
+  subject?: Subject;
+  eligibility_flag: string[];
+  score: number;
+};
 
-        if (json.success && Array.isArray(json.data)) {
-          setSubjects(json.data);
-          if (json.data.length > 0) setSubjectId(json.data[0].id); // default selection
-        } else {
-          console.error("Invalid subject response format");
-        }
-      } catch (error) {
-        console.error("Error fetching subjects:", error);
+const QuestionManagement = () => {
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [formData, setFormData] = useState<Omit<Question, "id">>({
+    question: "",
+    answers: ["", "", "", ""],
+    correct_answer: 0,
+    subjectId: 0,
+    eligibility_flag: ["weekly"],
+    score: 10,
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
+    null
+  );
+
+  const fetchQuestions = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${baseUrl}/api/question-bank`);
+      const json = await res.json();
+      if (json.success) {
+        setQuestions(json.data);
       }
-    };
+    } catch (err) {
+      setError("Failed to load questions.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const fetchSubjects = async () => {
+    try {
+      const res = await fetch(`${baseUrl}/api/subjects`);
+      const json = await res.json();
+      if (json.success) {
+        setSubjects(json.data);
+        if (!formData.subjectId) {
+          setFormData((prev) => ({ ...prev, subjectId: json.data[0].id }));
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching subjects");
+    }
+  };
+
+  useEffect(() => {
+    fetchQuestions();
     fetchSubjects();
   }, []);
 
   const handleAnswerChange = (index: number, value: string) => {
-    const updatedAnswers = [...answers];
-    updatedAnswers[index] = value;
-    setAnswers(updatedAnswers);
+    const newAnswers = [...formData.answers];
+    newAnswers[index] = value;
+    setFormData({ ...formData, answers: newAnswers });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (subjectId === null) {
-      alert("Please select a subject.");
-      return;
-    }
-
-    const payload = {
-      question,
-      answers,
-      correct_answer: correctAnswer,
-      subjectId,
-      eligibility_flag: eligibilityFlag,
-      score,
-    };
-
-    console.log("Submitting payload:", payload);
-
+  const handleSubmit = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${baseUrl}/api/question-bank/add`, {
-        method: "POST",
+      const endpoint = selectedQuestion
+        ? `${baseUrl}/api/question-bank/${selectedQuestion.id}`
+        : `${baseUrl}/api/question-bank/add`;
+
+      const method = selectedQuestion ? "PUT" : "POST";
+
+      const res = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(formData),
       });
 
-      if (res.ok) {
-        alert("Question submitted successfully!");
+      const json = await res.json();
+      if (res.ok && json.success) {
+        setShowCreateModal(false);
+        setShowEditModal(false);
+        fetchQuestions();
+        resetForm();
       } else {
-        alert("Submission failed.");
+        setError("Submission failed.");
       }
-    } catch (error) {
-      console.error("Error submitting form:", error);
+    } catch (err) {
+      setError("Submission error");
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const deleteQuestion = async () => {
+    if (!selectedQuestion) return;
+    setLoading(true);
+    try {
+      const res = await fetch(
+        `${baseUrl}/api/question-bank/${selectedQuestion.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (res.ok) {
+        fetchQuestions();
+        setShowDeleteModal(false);
+        setSelectedQuestion(null);
+      }
+    } catch (err) {
+      console.error("Delete failed", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      question: "",
+      answers: ["", "", "", ""],
+      correct_answer: 0,
+      subjectId: subjects[0]?.id ?? 0,
+      eligibility_flag: ["weekly"],
+      score: 10,
+    });
+    setSelectedQuestion(null);
+    setError("");
   };
 
   return (
-    <div className="p-4 md:px-2 w-full min-h-screen">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
-        <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
-          <h1 className="text-black text-xl font-bold">Add Questions</h1>
-          <button className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">
-            See All Weekly Challenges
-          </button>
-        </div>
+    <div className="p-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Question Management</h1>
+        <button
+          onClick={() => {
+            resetForm();
+            setShowCreateModal(true);
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+        >
+          <Plus size={18} /> Add Question
+        </button>
       </div>
 
-      {/* Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow-md rounded-md pt-4 px-12 pb-4 space-y-4 w-full min-h-[calc(100vh-10rem)] border border-purple-200"
-      >
-        {/* Question */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">Question</label>
-          <input
-            type="text"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Enter the question"
-            className="border border-gray-300 rounded-md p-2 mt-1"
-          />
+      {/* Error */}
+      {error && (
+        <div className="text-red-600 bg-red-100 border px-4 py-2 rounded mb-4">
+          {error}
         </div>
+      )}
 
-        {/* Options */}
-        {answers.map((answer, index) => (
-          <div key={index} className="flex flex-col w-full md:w-1/2">
-            <label className="text-sm font-medium text-gray-700">
-              Option {index + 1}
-            </label>
+      {/* Table */}
+      <div className="overflow-x-auto bg-white rounded shadow">
+        <table className="min-w-full">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="text-left p-3 text-sm font-semibold">Question</th>
+              <th className="text-left p-3 text-sm font-semibold">Subject</th>
+              <th className="text-left p-3 text-sm font-semibold">Score</th>
+              <th className="text-right p-3 text-sm font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={4} className="text-center py-4">
+                  Loading...
+                </td>
+              </tr>
+            ) : questions.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="text-center py-4">
+                  No questions found.
+                </td>
+              </tr>
+            ) : (
+              questions.map((q) => (
+                <tr key={q.id} className="border-t hover:bg-gray-50">
+                  <td className="p-3">{q.question}</td>
+                  <td className="p-3">{q.subject?.name}</td>
+                  <td className="p-3">{q.score}</td>
+                  <td className="p-3 text-right">
+                    <button
+                      onClick={() => {
+                        setSelectedQuestion(q);
+                        setFormData({
+                          question: q.question,
+                          answers: q.answers,
+                          correct_answer: q.correct_answer,
+                          subjectId: q.subjectId,
+                          eligibility_flag: q.eligibility_flag,
+                          score: q.score,
+                        });
+                        setShowEditModal(true);
+                      }}
+                      className="text-blue-600 hover:text-blue-800 mr-2"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedQuestion(q);
+                        setShowDeleteModal(true);
+                      }}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Create / Edit Modal */}
+      {(showCreateModal || showEditModal) && (
+        <div className="fixed inset-0 bg-black/20 z-50 flex justify-center items-center">
+          <div className="bg-white p-6 rounded shadow-lg w-full max-w-lg space-y-4">
+            <div className="flex justify-between items-center border-b pb-2">
+              <h2 className="text-xl font-semibold">
+                {showEditModal ? "Edit Question" : "Create Question"}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setShowEditModal(false);
+                }}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Question input */}
             <input
               type="text"
-              value={answer}
-              onChange={(e) => handleAnswerChange(index, e.target.value)}
-              placeholder={`Option ${index + 1}`}
-              className="border border-gray-300 rounded-md p-2 mt-1"
+              value={formData.question}
+              onChange={(e) =>
+                setFormData({ ...formData, question: e.target.value })
+              }
+              placeholder="Enter question"
+              className="w-full border px-3 py-2 rounded"
             />
-          </div>
-        ))}
 
-        {/* Correct Answer */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">
-            Correct Answer (Index starting from 0)
-          </label>
-          <input
-            type="number"
-            value={correctAnswer}
-            onChange={(e) => setCorrectAnswer(Number(e.target.value))}
-            className="border border-gray-300 rounded-md p-2 mt-1"
-          />
-        </div>
-
-        {/* Score */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">Score</label>
-          <input
-            type="number"
-            value={score}
-            onChange={(e) => setScore(Number(e.target.value))}
-            className="border border-gray-300 rounded-md p-2 mt-1"
-          />
-        </div>
-
-        {/* Subject Dropdown */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700">Subject</label>
-          <select
-            value={subjectId ?? ""}
-            onChange={(e) => setSubjectId(Number(e.target.value))}
-            className="border border-gray-300 rounded-md p-2 mt-1"
-          >
-            {subjects.map((subject) => (
-              <option key={subject.id} value={subject.id}>
-                {subject.name}
-              </option>
+            {/* Answers */}
+            {formData.answers.map((a, i) => (
+              <input
+                key={i}
+                type="text"
+                placeholder={`Option ${i + 1}`}
+                value={a}
+                onChange={(e) => handleAnswerChange(i, e.target.value)}
+                className="w-full border px-3 py-2 rounded"
+              />
             ))}
-          </select>
-        </div>
 
-        {/* Eligibility Flags */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <label className="text-sm font-medium text-gray-700 mb-1">
-            Eligibility Flags
-          </label>
-          <div className="flex flex-col space-y-1">
-            {["weekly", "monthly", "mega", "special_event", "practice"].map(
-              (flag) => (
-                <label
-                  key={flag}
-                  className="inline-flex items-center space-x-2"
-                >
-                  <input
-                    type="checkbox"
-                    value={flag}
-                    checked={eligibilityFlag.includes(flag)}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setEligibilityFlag((prev) =>
-                        prev.includes(value)
-                          ? prev.filter((item) => item !== value)
-                          : [...prev, value]
-                      );
-                    }}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm text-gray-800">{flag}</span>
-                </label>
-              )
-            )}
+            {/* Correct answer */}
+            <input
+              type="number"
+              value={formData.correct_answer}
+              onChange={(e) =>
+                setFormData({ ...formData, correct_answer: +e.target.value })
+              }
+              placeholder="Correct answer index (0-based)"
+              className="w-full border px-3 py-2 rounded"
+            />
+
+            {/* Subject dropdown */}
+            <select
+              value={formData.subjectId}
+              onChange={(e) =>
+                setFormData({ ...formData, subjectId: +e.target.value })
+              }
+              className="w-full border px-3 py-2 rounded"
+            >
+              {subjects.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+
+            {/* Score */}
+            <input
+              type="number"
+              value={formData.score}
+              onChange={(e) =>
+                setFormData({ ...formData, score: +e.target.value })
+              }
+              placeholder="Score"
+              className="w-full border px-3 py-2 rounded"
+            />
+
+            {/* Eligibility flags */}
+            <div className="space-y-1">
+              {["weekly", "monthly", "mega", "special_event", "practice"].map(
+                (flag) => (
+                  <label key={flag} className="inline-flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      value={flag}
+                      checked={formData.eligibility_flag.includes(flag)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setFormData((prev) => ({
+                          ...prev,
+                          eligibility_flag: prev.eligibility_flag.includes(
+                            value
+                          )
+                            ? prev.eligibility_flag.filter((f) => f !== value)
+                            : [...prev.eligibility_flag, value],
+                        }));
+                      }}
+                    />
+                    <span className="text-sm">{flag}</span>
+                  </label>
+                )
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setShowEditModal(false);
+                }}
+                className="px-4 py-2 border rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                {loading ? "Saving..." : "Save"}
+              </button>
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Submit Button */}
-        <div className="flex flex-col w-full md:w-1/2">
-          <button
-            type="submit"
-            className="bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-sm px-8 py-2 transition self-start"
-          >
-            Save
-          </button>
+      {/* Delete Modal */}
+      {showDeleteModal && selectedQuestion && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow max-w-md w-full space-y-4">
+            <p>
+              Are you sure you want to delete the question:{" "}
+              <strong>{selectedQuestion.question}</strong>?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 border rounded"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={deleteQuestion}
+                className="px-4 py-2 bg-red-600 text-white rounded"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
-      </form>
+      )}
     </div>
   );
-}
+};
+
+export default QuestionManagement;

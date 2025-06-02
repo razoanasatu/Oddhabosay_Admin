@@ -13,13 +13,16 @@ const navItems = [
   { label: "Dashboard", href: "/" },
   { label: "All Users", href: "/allUsers" },
   { label: "Global Board", href: "/globalBoard" },
-  { label: "Challenges", href: "/challengesPage" },
-  { label: "Add Exam", href: "/addExam" },
-  { label: "Add Subject", href: "/addSubjects" },
-  { label: "Add Questions", href: "/addQuestion" },
+  //{ label: "Challenges", href: "/challengesPage" },
+  { label: "Challenge", href: "/addExam" },
+  { label: "Subject", href: "/addSubjects" },
+  { label: "Questions", href: "/addQuestion" },
+  { label: "Rules", href: "/ruleId" },
+  { label: "Challenge Requirements", href: "/challengeRequirement" },
   { label: "Prize Details", href: "/prizeDetails" },
-  { label: "Special Events", href: "/specialEvent" },
+  { label: "Special Events", href: "/createSpecialEvent" },
   { label: "Win a Laptop", href: "/winLaptop" },
+  //{ label: "Challenge Requirement", href: "/challengeRequirement" },
   { label: "More", href: "/admin/more" },
 ];
 
@@ -36,7 +39,7 @@ export default function AdminLayout({
       {/* Sidebar */}
       <div
         className={clsx(
-          "fixed z-20 md:relative md:translate-x-0 transition-transform duration-200 ease-in-out bg-black w-64 text-white h-full flex flex-col",
+          "fixed z-20 md:relative md:translate-x-0 transition-transform duration-200 ease-in-out bg-black w-64 text-white h-full flex flex-col overflow-y-auto",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

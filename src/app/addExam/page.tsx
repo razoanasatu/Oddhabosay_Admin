@@ -1,12 +1,9 @@
 "use client";
 import { baseUrl } from "@/utils/constant";
-import React, { useEffect, useState } from "react";
+import { Edit, Plus, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
-type Question = {
-  id: number;
-  question: string;
-};
-
+// Define Challenge types based on your API response
 type PrizePosition = {
   position: string;
   prize_money: number;
@@ -14,415 +11,1128 @@ type PrizePosition = {
   limit: number;
 };
 
-type PrizeDetail = {
-  id: number;
+type PrizeDetails = {
   prize_positions: PrizePosition[];
   global_board: boolean;
+  id: number;
   monthly_eligibility: number;
   weekly_eligibility: number;
   createdAt: string;
   updatedAt: string;
 };
 
-type ChallengeRequirement = {
+type Rules = {
   id: number;
+  challenge_type: string;
   title: string;
+  points: string[];
+  createdAt: string;
+  updatedAt: string;
 };
 
-type Rule = {
+type Requirements = {
   id: number;
-  title: string;
+  number_of_practice_challenges: number;
+  number_of_weekly_challenges: number;
+  number_of_monthly_challenges: number;
+  number_of_mega_challenges: number;
+  number_of_special_event_challenges: number;
+  number_of_practice_questions_solved: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
-type SpecialEvent = {
+type SpecialEventDetails = {
   id: number;
   title: string;
+  content: string;
+  image: string;
 };
 
-export default function CreateChallenge() {
-  interface ApiResponse<T> {
-    success: boolean;
-    data: T;
-  }
+type UserChallengeStatus = {
+  id: number;
+  challenge_completion_status: string;
+  practice_stats: {
+    weekly: number;
+    monthly: number;
+    yearly: number;
+    last_3_months: number;
+  };
+  exam_stats: {
+    weekly_exam_stats: number;
+    monthly_exam_stats: number;
+    mega_exam_stats: number;
+  };
+};
 
-  const [challengeType, setChallengeType] = useState("weekly");
-  const [fee, setFee] = useState<number>(0);
-  const [deadline, setDeadline] = useState("");
-  const [activeStatus, setActiveStatus] = useState(true);
-  const [questionIds, setQuestionIds] = useState<number[]>([]);
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [prizeDetailsIds, setPrizeDetailsIds] = useState<number[]>([]);
-  const [prizeDetails, setPrizeDetails] = useState<PrizeDetail[]>([]);
-  const [challengeRequirementId, setChallengeRequirementId] = useState<
-    number | ""
-  >("");
-  const [challengeRequirements, setChallengeRequirements] = useState<
-    ChallengeRequirement[]
-  >([]);
-  const [ruleId, setRuleId] = useState<number | "">("");
-  const [rules, setRules] = useState<Rule[]>([]);
-  const [eventCode, setEventCode] = useState("");
-  const [eventId, setEventId] = useState<number | "">("");
-  const [events, setEvents] = useState<SpecialEvent[]>([]);
-  const [startDatetime, setStartDatetime] = useState("");
-  const [endDatetime, setEndDatetime] = useState("");
-  const [totalMarks, setTotalMarks] = useState<number>(0);
-  const [totalSeats, setTotalSeats] = useState<number>(0);
-  const [quizTime, setQuizTime] = useState<number>(0);
+export type Challenge = {
+  id: number;
+  challenge_type: "special_event" | "weekly" | "monthly" | "mega"; // Added common types
+  fee: number;
+  deadline: string;
+  quiz_time: number;
+  active_status: boolean;
+  event_code: string;
+  registered_users: number;
+  result_finalization: boolean;
+  start_datetime: string;
+  end_datetime: string;
+  total_marks: number;
+  total_seats: number;
+  available_seats: number;
+  createdAt: string;
+  updatedAt: string;
+  users: UserChallengeStatus[];
+  prizeDetails: PrizeDetails[];
+  rules: Rules;
+  requirements: Requirements;
+  specialEventDetails: SpecialEventDetails | null;
+};
 
-  // Fetch APIs on mount
-  useEffect(() => {
-    fetch(`${baseUrl}/api/question-bank`)
-      .then((res) => res.json())
-      .then((data: ApiResponse<Question[]>) => {
-        if (data.success) setQuestions(data.data);
-      });
+// Simplified form data for create/edit operations
+type ChallengeFormData = {
+  challenge_type: "special_event" | "weekly" | "monthly" | "mega" | "";
+  fee: number | "";
+  deadline: string;
+  quiz_time: number | "";
+  active_status: boolean;
+  event_code: string;
+  start_datetime: string;
+  end_datetime: string;
+  total_marks: number | "";
+  total_seats: number | "";
+  // Add more fields here as needed for create/edit, potentially nested for rules/prizeDetails
+  title?: string; // For specialEventDetails title
+  content?: string; // For specialEventDetails content
+  image?: string; // For specialEventDetails image
+};
 
-    fetch(`${baseUrl}/api/prize-details`)
-      .then((res) => res.json())
-      .then((data: ApiResponse<PrizeDetail[]>) => {
-        if (data.success) setPrizeDetails(data.data);
-      });
+const ChallengeManagement = () => {
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(
+    null
+  );
+  const [formData, setFormData] = useState<ChallengeFormData>({
+    challenge_type: "",
+    fee: "",
+    deadline: "",
+    quiz_time: "",
+    active_status: true,
+    event_code: "",
+    start_datetime: "",
+    end_datetime: "",
+    total_marks: "",
+    total_seats: "",
+    title: "",
+    content: "",
+    image: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-    fetch(`${baseUrl}/api/challenge-requirement`)
-      .then((res) => res.json())
-      .then((data: ApiResponse<ChallengeRequirement[]>) => {
-        if (data.success) setChallengeRequirements(data.data);
-      });
+  // Helper to flatten challenges from API response
+  const flattenChallenges = (apiResponse: any) => {
+    const flattened: Challenge[] = [];
+    for (const key in apiResponse) {
+      if (Array.isArray(apiResponse[key])) {
+        flattened.push(...apiResponse[key]);
+      }
+    }
+    return flattened;
+  };
 
-    fetch(`${baseUrl}/api/challenge-rules`)
-      .then((res) => res.json())
-      .then((data: ApiResponse<Rule[]>) => {
-        if (data.success) setRules(data.data);
-      });
+  const fetchChallenges = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${baseUrl}/api/challenges/all-challenges`);
+      const data = await response.json();
+      if (response.ok) {
+        setChallenges(flattenChallenges(data));
+        setError("");
+      } else {
+        setError("Failed to fetch challenges");
+      }
+    } catch (err) {
+      setError("Error fetching challenges");
+      console.error("Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetch(`${baseUrl}/api/special-event`)
-      .then((res) => res.json())
-      .then((data: ApiResponse<SpecialEvent[]>) => {
-        if (data.success) setEvents(data.data);
-      });
-  }, []);
+  const handleFormChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
+    const { name, value, type } = e.target;
+    if (type === "checkbox") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: (e.target as HTMLInputElement).checked,
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (challengeType === "special_event" && (!eventCode || !eventId)) {
-      alert("Event Code and Event ID are required for Special Event.");
+  const createChallenge = async () => {
+    if (
+      !formData.challenge_type ||
+      formData.fee === "" ||
+      formData.quiz_time === "" ||
+      !formData.start_datetime ||
+      !formData.end_datetime ||
+      formData.total_marks === "" ||
+      formData.total_seats === ""
+    ) {
+      setError("Please fill in all required fields.");
       return;
     }
 
-    const payload = {
-      challenge_type: challengeType,
-      fee,
-      deadline,
-      active_status: activeStatus,
-      questionIds,
-      prizeDetailsIds,
-      challengeRequirementId,
-      ruleId,
-      event_code: challengeType === "special_event" ? eventCode : undefined,
-      eventId: challengeType === "special_event" ? eventId : undefined,
-      start_datetime: startDatetime,
-      end_datetime: endDatetime,
-      total_marks: totalMarks,
-      total_seats: totalSeats,
-      quiz_time: quizTime,
-    };
-
+    setLoading(true);
+    setError("");
     try {
-      const res = await fetch(`${baseUrl}/api/challenges/create`, {
+      const payload: any = {
+        ...formData,
+        fee: Number(formData.fee),
+        quiz_time: Number(formData.quiz_time),
+        total_marks: Number(formData.total_marks),
+        total_seats: Number(formData.total_seats),
+      };
+
+      // Add specific fields for special_event
+      if (formData.challenge_type === "special_event") {
+        payload.specialEventDetails = {
+          title: formData.title,
+          content: formData.content,
+          image: formData.image,
+        };
+      }
+
+      const response = await fetch(`${baseUrl}/api/challenges`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      if (res.ok) {
-        alert("Challenge created successfully.");
+      const data = await response.json();
+      if (data.success || response.ok) {
+        setShowCreateModal(false);
+        setFormData({
+          challenge_type: "",
+          fee: "",
+          deadline: "",
+          quiz_time: "",
+          active_status: true,
+          event_code: "",
+          start_datetime: "",
+          end_datetime: "",
+          total_marks: "",
+          total_seats: "",
+          title: "",
+          content: "",
+          image: "",
+        });
+        fetchChallenges();
       } else {
-        alert("Failed to create challenge.");
+        setError(data.message || "Failed to create challenge");
       }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("An error occurred.");
+    } catch (err) {
+      setError("Error creating challenge");
+      console.error("Error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const updateChallenge = async () => {
+    if (!selectedChallenge?.id) {
+      setError("No challenge selected for update.");
+      return;
+    }
+
+    if (
+      !formData.challenge_type ||
+      formData.fee === "" ||
+      formData.quiz_time === "" ||
+      !formData.start_datetime ||
+      !formData.end_datetime ||
+      formData.total_marks === "" ||
+      formData.total_seats === ""
+    ) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      const payload: any = {
+        ...formData,
+        fee: Number(formData.fee),
+        quiz_time: Number(formData.quiz_time),
+        total_marks: Number(formData.total_marks),
+        total_seats: Number(formData.total_seats),
+      };
+
+      // Add specific fields for special_event
+      if (formData.challenge_type === "special_event") {
+        payload.specialEventDetails = {
+          title: formData.title,
+          content: formData.content,
+          image: formData.image,
+        };
+      }
+
+      const response = await fetch(
+        `${baseUrl}/api/challenges/${selectedChallenge.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const data = await response.json();
+      if (data.success || response.ok) {
+        setShowEditModal(false);
+        setSelectedChallenge(null);
+        setFormData({
+          challenge_type: "",
+          fee: "",
+          deadline: "",
+          quiz_time: "",
+          active_status: true,
+          event_code: "",
+          start_datetime: "",
+          end_datetime: "",
+          total_marks: "",
+          total_seats: "",
+          title: "",
+          content: "",
+          image: "",
+        });
+        fetchChallenges();
+      } else {
+        setError(data.message || "Failed to update challenge");
+      }
+    } catch (err) {
+      setError("Error updating challenge");
+      console.error("Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteChallenge = async () => {
+    if (!selectedChallenge?.id) {
+      setError("No challenge selected for deletion.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch(
+        `${baseUrl}/api/challenges/${selectedChallenge.id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (response.ok) {
+        setShowDeleteModal(false);
+        setSelectedChallenge(null);
+        fetchChallenges();
+      } else {
+        setError("Failed to delete challenge");
+      }
+    } catch (err) {
+      setError("Error deleting challenge");
+      console.error("Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (challenge: Challenge) => {
+    setSelectedChallenge(challenge);
+    setFormData({
+      challenge_type: challenge.challenge_type,
+      fee: challenge.fee,
+      deadline: challenge.deadline.split("T")[0], // Format for date input
+      quiz_time: challenge.quiz_time,
+      active_status: challenge.active_status,
+      event_code: challenge.event_code,
+      start_datetime: challenge.start_datetime.split("T")[0], // Format for date input
+      end_datetime: challenge.end_datetime.split("T")[0], // Format for date input
+      total_marks: challenge.total_marks,
+      total_seats: challenge.total_seats,
+      title: challenge.specialEventDetails?.title || "",
+      content: challenge.specialEventDetails?.content || "",
+      image: challenge.specialEventDetails?.image || "",
+    });
+    setShowEditModal(true);
+    setError("");
+  };
+
+  const handleDelete = (challenge: Challenge) => {
+    setSelectedChallenge(challenge);
+    setShowDeleteModal(true);
+    setError("");
+  };
+
+  const handleCreate = () => {
+    setFormData({
+      challenge_type: "",
+      fee: "",
+      deadline: "",
+      quiz_time: "",
+      active_status: true,
+      event_code: "",
+      start_datetime: "",
+      end_datetime: "",
+      total_marks: "",
+      total_seats: "",
+      title: "",
+      content: "",
+      image: "",
+    });
+    setShowCreateModal(true);
+    setError("");
+  };
+
+  useEffect(() => {
+    fetchChallenges();
+  }, []);
+
   return (
-    <div className="p-4 max-w-4xl mx-auto min-h-screen">
-      <h1 className="text-2xl font-bold mb-6">Create Challenge</h1>
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 bg-white p-6 rounded shadow"
-      >
-        {/* Challenge Type */}
-        <div>
-          <label className="block mb-1 font-medium">Challenge Type</label>
-          <select
-            value={challengeType}
-            onChange={(e) => setChallengeType(e.target.value)}
-            className="border border-gray-300 rounded p-2 w-full max-w-sm"
-          >
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-            <option value="mega">Mega</option>
-            <option value="special_event">Special Event</option>
-          </select>
-        </div>
-
-        {/* Fee */}
-        <div>
-          <label className="block mb-1 font-medium">Fee</label>
-          <input
-            type="number"
-            value={fee}
-            onChange={(e) => setFee(Number(e.target.value))}
-            className="border border-gray-300 rounded p-2 w-full max-w-sm"
-            min={0}
-          />
-        </div>
-
-        {/* Deadline */}
-        <div>
-          <label className="block mb-1 font-medium">Deadline</label>
-          <input
-            type="datetime-local"
-            value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
-            className="border border-gray-300 rounded p-2 w-full max-w-sm"
-          />
-        </div>
-
-        {/* Active Status */}
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={activeStatus}
-            onChange={(e) => setActiveStatus(e.target.checked)}
-            id="activeStatus"
-          />
-          <label htmlFor="activeStatus" className="font-medium">
-            Active Status
-          </label>
-        </div>
-        {/* Select Questions - Custom Multi-Select */}
-        <div>
-          <label className="block mb-1 font-medium">Select Questions</label>
-
-          {/* Selected Tags */}
-          <div className="flex flex-wrap gap-2 mb-2">
-            {questionIds.map((id) => {
-              const question = questions.find((q) => q.id === id);
-              return (
-                <span
-                  key={id}
-                  className="flex items-center bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm"
-                >
-                  {question?.question || `Question ${id}`}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setQuestionIds(questionIds.filter((qId) => qId !== id))
-                    }
-                    className="ml-2 text-purple-600 hover:text-purple-900"
-                  >
-                    &times;
-                  </button>
-                </span>
-              );
-            })}
-          </div>
-
-          {/* Dropdown */}
-          <select
-            value=""
-            onChange={(e) => {
-              const selectedId = Number(e.target.value);
-              if (!questionIds.includes(selectedId)) {
-                setQuestionIds([...questionIds, selectedId]);
-              }
-            }}
-            className="border border-gray-300 rounded p-2 w-full max-w-lg"
-          >
-            <option value="" disabled>
-              Select a question
-            </option>
-            {questions
-              .filter((q) => !questionIds.includes(q.id))
-              .map((q) => (
-                <option key={q.id} value={q.id}>
-                  {q.question}
-                </option>
-              ))}
-          </select>
-        </div>
-
-        {/* Prize Details (Single-select but stored as array) */}
-        <div>
-          <label className="block mb-1 font-medium">Prize Details</label>
-          <select
-            value={prizeDetailsIds.length > 0 ? String(prizeDetailsIds[0]) : ""}
-            onChange={(e) => {
-              const selectedId = Number(e.target.value);
-              setPrizeDetailsIds([selectedId]); // Wrap in array
-            }}
-            className="border border-gray-300 rounded p-2 w-full max-w-lg"
-          >
-            <option value="" disabled>
-              Select a prize detail
-            </option>
-            {prizeDetails.map((p, idx) => (
-              <option key={idx} value={p.id}>
-                Prize Detail {p.id}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Challenge Requirement */}
-        <div>
-          <label className="block mb-1 font-medium">
-            Challenge Requirement
-          </label>
-          <select
-            value={
-              challengeRequirementId === ""
-                ? ""
-                : String(challengeRequirementId)
-            }
-            onChange={(e) => setChallengeRequirementId(Number(e.target.value))}
-            className="border border-gray-300 rounded p-2 w-full max-w-sm"
-          >
-            <option value="" disabled>
-              Select requirement
-            </option>
-            {challengeRequirements.map((req) => (
-              <option key={req.id} value={req.id}>
-                {req.title || `Requirement ${req.id}`}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Rule */}
-        <div>
-          <label className="block mb-1 font-medium">Rule</label>
-          <select
-            value={ruleId === "" ? "" : String(ruleId)}
-            onChange={(e) => setRuleId(Number(e.target.value))}
-            className="border border-gray-300 rounded p-2 w-full max-w-sm"
-          >
-            <option value="" disabled>
-              Select rule
-            </option>
-            {rules.map((rule) => (
-              <option key={rule.id} value={rule.id}>
-                {rule.title || `Rule ${rule.id}`}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Special Event Fields */}
-        {challengeType === "special_event" && (
-          <>
-            <div>
-              <label className="block mb-1 font-medium">Event Code</label>
-              <input
-                type="text"
-                value={eventCode}
-                onChange={(e) => setEventCode(e.target.value)}
-                className="border border-gray-300 rounded p-2 w-full max-w-sm"
-              />
-            </div>
-
-            <div>
-              <label className="block mb-1 font-medium">Event</label>
-              <select
-                value={eventId === "" ? "" : String(eventId)}
-                onChange={(e) => setEventId(Number(e.target.value))}
-                className="border border-gray-300 rounded p-2 w-full max-w-sm"
-              >
-                <option value="" disabled>
-                  Select event
-                </option>
-                {events.map((ev) => (
-                  <option key={ev.id} value={ev.id}>
-                    {ev.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </>
-        )}
-
-        {/* Start DateTime */}
-        <div>
-          <label className="block mb-1 font-medium">Start Date & Time</label>
-          <input
-            type="datetime-local"
-            value={startDatetime}
-            onChange={(e) => setStartDatetime(e.target.value)}
-            className="border border-gray-300 rounded p-2 w-full max-w-sm"
-          />
-        </div>
-
-        {/* End DateTime */}
-        <div>
-          <label className="block mb-1 font-medium">End Date & Time</label>
-          <input
-            type="datetime-local"
-            value={endDatetime}
-            onChange={(e) => setEndDatetime(e.target.value)}
-            className="border border-gray-300 rounded p-2 w-full max-w-sm"
-          />
-        </div>
-
-        {/* Total Marks */}
-        <div>
-          <label className="block mb-1 font-medium">Total Marks</label>
-          <input
-            type="number"
-            value={totalMarks}
-            onChange={(e) => setTotalMarks(Number(e.target.value))}
-            className="border border-gray-300 rounded p-2 w-full max-w-sm"
-            min={0}
-          />
-        </div>
-
-        {/* Total Seats */}
-        <div>
-          <label className="block mb-1 font-medium">Total Seats</label>
-          <input
-            type="number"
-            value={totalSeats}
-            onChange={(e) => setTotalSeats(Number(e.target.value))}
-            className="border border-gray-300 rounded p-2 w-full max-w-sm"
-            min={0}
-          />
-        </div>
-
-        {/* Quiz Time (minutes) */}
-        <div>
-          <label className="block mb-1 font-medium">Quiz Time (minutes)</label>
-          <input
-            type="number"
-            value={quizTime}
-            onChange={(e) => setQuizTime(Number(e.target.value))}
-            className="border border-gray-300 rounded p-2 w-full max-w-sm"
-            min={0}
-          />
-        </div>
-
-        {/* Submit Button */}
-        <div>
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Challenge Management
+          </h1>
           <button
-            type="submit"
-            className="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700 transition"
+            onClick={handleCreate}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
           >
-            Create Challenge
+            <Plus size={20} />
+            Add Challenge
           </button>
         </div>
-      </form>
+
+        {/* Error */}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
+
+        {/* Challenges Table */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Title
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Fee
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Quiz Time (min)
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Start Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  End Date
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Seats
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Active
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={10}
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
+                    Loading challenges...
+                  </td>
+                </tr>
+              ) : challenges.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={10}
+                    className="px-6 py-4 text-center text-gray-500"
+                  >
+                    No challenges found
+                  </td>
+                </tr>
+              ) : (
+                challenges.map((challenge: Challenge) => (
+                  <tr key={challenge.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {challenge.id}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {challenge.challenge_type}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {challenge.specialEventDetails?.title || "N/A"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      ${challenge.fee}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {challenge.quiz_time}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(challenge.start_datetime).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(challenge.end_datetime).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {challenge.available_seats}/{challenge.total_seats}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {challenge.active_status ? (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                          Inactive
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() => handleEdit(challenge)}
+                          className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                          title="Edit Challenge"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(challenge)}
+                          className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
+                          title="Delete Challenge"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Create Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[200vh] flex flex-col overflow-hidden">
+              <div className="flex justify-between items-center p-6 border-b">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Create Challenge
+                </h2>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="challenge_type"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Challenge Type
+                  </label>
+                  <select
+                    id="challenge_type"
+                    name="challenge_type"
+                    value={formData.challenge_type}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Select Type</option>
+                    <option value="special_event">Special Event</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="mega">Mega</option>
+                  </select>
+                </div>
+                <div>
+                  <label
+                    htmlFor="fee"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Fee
+                  </label>
+                  <input
+                    type="number"
+                    id="fee"
+                    name="fee"
+                    value={formData.fee}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter fee"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="quiz_time"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Quiz Time (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    id="quiz_time"
+                    name="quiz_time"
+                    value={formData.quiz_time}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter quiz time"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="deadline"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Deadline
+                  </label>
+                  <input
+                    type="date"
+                    id="deadline"
+                    name="deadline"
+                    value={formData.deadline.split("T")[0]} // Ensure date format
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="start_datetime"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    id="start_datetime"
+                    name="start_datetime"
+                    value={formData.start_datetime.split("T")[0]} // Ensure date format
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="end_datetime"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    id="end_datetime"
+                    name="end_datetime"
+                    value={formData.end_datetime.split("T")[0]} // Ensure date format
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="total_marks"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Total Marks
+                  </label>
+                  <input
+                    type="number"
+                    id="total_marks"
+                    name="total_marks"
+                    value={formData.total_marks}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter total marks"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="total_seats"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Total Seats
+                  </label>
+                  <input
+                    type="number"
+                    id="total_seats"
+                    name="total_seats"
+                    value={formData.total_seats}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter total seats"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="event_code"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Event Code
+                  </label>
+                  <input
+                    type="text"
+                    id="event_code"
+                    name="event_code"
+                    value={formData.event_code}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter event code (optional)"
+                  />
+                </div>
+                <div className="col-span-full flex items-center mt-2">
+                  <input
+                    type="checkbox"
+                    id="active_status"
+                    name="active_status"
+                    checked={formData.active_status}
+                    onChange={handleFormChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label
+                    htmlFor="active_status"
+                    className="ml-2 block text-sm text-gray-900"
+                  >
+                    Active Status
+                  </label>
+                </div>
+
+                {formData.challenge_type === "special_event" && (
+                  <>
+                    <hr className="col-span-full my-4" />
+                    <h3 className="col-span-full text-lg font-semibold text-gray-800">
+                      Special Event Details
+                    </h3>
+                    <div>
+                      <label
+                        htmlFor="title"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Title
+                      </label>
+                      <input
+                        type="text"
+                        id="title"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter special event title"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="content"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Content
+                      </label>
+                      <textarea
+                        id="content"
+                        name="content"
+                        value={formData.content}
+                        onChange={handleFormChange}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter special event content"
+                      />
+                    </div>
+                    <div className="col-span-full">
+                      <label
+                        htmlFor="image"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Image URL
+                      </label>
+                      <input
+                        type="text"
+                        id="image"
+                        name="image"
+                        value={formData.image}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter image URL"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="p-6 border-t flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={createChallenge}
+                  disabled={loading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? "Creating..." : "Create"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Modal (reusing the same form structure) */}
+        {showEditModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-y-auto">
+              <div className="flex justify-between items-center p-6 border-b">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Edit Challenge
+                </h2>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="challenge_type"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Challenge Type
+                  </label>
+                  <select
+                    id="challenge_type"
+                    name="challenge_type"
+                    value={formData.challenge_type}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled // Often challenge type is not editable after creation
+                  >
+                    <option value="">Select Type</option>
+                    <option value="special_event">Special Event</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="mega">Mega</option>
+                  </select>
+                </div>
+                <div>
+                  <label
+                    htmlFor="fee"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Fee
+                  </label>
+                  <input
+                    type="number"
+                    id="fee"
+                    name="fee"
+                    value={formData.fee}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter fee"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="quiz_time"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Quiz Time (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    id="quiz_time"
+                    name="quiz_time"
+                    value={formData.quiz_time}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter quiz time"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="deadline"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Deadline
+                  </label>
+                  <input
+                    type="date"
+                    id="deadline"
+                    name="deadline"
+                    value={formData.deadline.split("T")[0]}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="start_datetime"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    id="start_datetime"
+                    name="start_datetime"
+                    value={formData.start_datetime.split("T")[0]}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="end_datetime"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    id="end_datetime"
+                    name="end_datetime"
+                    value={formData.end_datetime.split("T")[0]}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="total_marks"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Total Marks
+                  </label>
+                  <input
+                    type="number"
+                    id="total_marks"
+                    name="total_marks"
+                    value={formData.total_marks}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter total marks"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="total_seats"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Total Seats
+                  </label>
+                  <input
+                    type="number"
+                    id="total_seats"
+                    name="total_seats"
+                    value={formData.total_seats}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter total seats"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="event_code"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Event Code
+                  </label>
+                  <input
+                    type="text"
+                    id="event_code"
+                    name="event_code"
+                    value={formData.event_code}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter event code (optional)"
+                  />
+                </div>
+                <div className="col-span-full flex items-center mt-2">
+                  <input
+                    type="checkbox"
+                    id="active_status"
+                    name="active_status"
+                    checked={formData.active_status}
+                    onChange={handleFormChange}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  <label
+                    htmlFor="active_status"
+                    className="ml-2 block text-sm text-gray-900"
+                  >
+                    Active Status
+                  </label>
+                </div>
+
+                {formData.challenge_type === "special_event" && (
+                  <>
+                    <hr className="col-span-full my-4" />
+                    <h3 className="col-span-full text-lg font-semibold text-gray-800">
+                      Special Event Details
+                    </h3>
+                    <div>
+                      <label
+                        htmlFor="title"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Title
+                      </label>
+                      <input
+                        type="text"
+                        id="title"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter special event title"
+                      />
+                    </div>
+                    <div>
+                      <label
+                        htmlFor="content"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Content
+                      </label>
+                      <textarea
+                        id="content"
+                        name="content"
+                        value={formData.content}
+                        onChange={handleFormChange}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter special event content"
+                      />
+                    </div>
+                    <div className="col-span-full">
+                      <label
+                        htmlFor="image"
+                        className="block text-sm font-medium text-gray-700 mb-2"
+                      >
+                        Image URL
+                      </label>
+                      <input
+                        type="text"
+                        id="image"
+                        name="image"
+                        value={formData.image}
+                        onChange={handleFormChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder="Enter image URL"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="p-6 border-t flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={updateChallenge}
+                  disabled={loading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? "Updating..." : "Update"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 backdrop-blur-sm bg-white/30 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-y-auto">
+              <div className="flex justify-between items-center p-6 border-b">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Delete Challenge
+                </h2>
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+              <div className="p-6">
+                <p className="text-gray-700 mb-6">
+                  Are you sure you want to delete the{" "}
+                  <span className="font-semibold">
+                    {selectedChallenge?.challenge_type}
+                  </span>{" "}
+                  challenge with ID "
+                  <span className="font-semibold">{selectedChallenge?.id}</span>
+                  "? This action cannot be undone.
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <button
+                    onClick={() => setShowDeleteModal(false)}
+                    className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    No, Cancel
+                  </button>
+                  <button
+                    onClick={deleteChallenge}
+                    disabled={loading}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {loading ? "Deleting..." : "Yes, Delete"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+};
+
+export default ChallengeManagement;
