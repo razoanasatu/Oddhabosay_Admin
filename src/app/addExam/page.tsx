@@ -200,13 +200,20 @@ const ChallengeManagement = () => {
     setLoading(true);
     setError("");
     try {
-      interface Payload {
+      interface Payload
+        extends Omit<
+          ChallengeFormData,
+          "fee" | "quiz_time" | "total_marks" | "total_seats"
+        > {
         fee: number;
         quiz_time: number;
         total_marks: number;
         total_seats: number;
-        // Include other fields from formData as needed, with their types
-        [key: string]: any; // optional, if formData has other unknown keys
+        specialEventDetails?: {
+          title?: string;
+          content?: string;
+          image?: string;
+        };
       }
 
       const payload: Payload = {
@@ -284,7 +291,23 @@ const ChallengeManagement = () => {
     setLoading(true);
     setError("");
     try {
-      const payload: any = {
+      interface Payload
+        extends Omit<
+          ChallengeFormData,
+          "fee" | "quiz_time" | "total_marks" | "total_seats"
+        > {
+        fee: number;
+        quiz_time: number;
+        total_marks: number;
+        total_seats: number;
+        specialEventDetails?: {
+          title?: string;
+          content?: string;
+          image?: string;
+        };
+      }
+
+      const payload: Payload = {
         ...formData,
         fee: Number(formData.fee),
         quiz_time: Number(formData.quiz_time),
