@@ -1143,10 +1143,11 @@ const ChallengeManagement = () => {
                   <span className="font-semibold">
                     {selectedChallenge?.challenge_type}
                   </span>{" "}
-                  challenge with ID "
+                  challenge with ID &quot;
                   <span className="font-semibold">{selectedChallenge?.id}</span>
-                  "? This action cannot be undone.
+                  &quot;? This action cannot be undone.
                 </p>
+
                 <div className="flex gap-3 justify-end">
                   <button
                     onClick={() => setShowDeleteModal(false)}
