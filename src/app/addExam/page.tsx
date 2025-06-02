@@ -539,7 +539,7 @@ const ChallengeManagement = () => {
                       {challenge.specialEventDetails?.title || "N/A"}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${challenge.fee}
+                      ৳ {challenge.fee}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {challenge.quiz_time}
