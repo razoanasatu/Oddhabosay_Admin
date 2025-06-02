@@ -134,7 +134,11 @@ const ChallengeManagement = () => {
   const [error, setError] = useState("");
 
   // Helper to flatten challenges from API response
-  const flattenChallenges = (apiResponse: any) => {
+  type ApiResponse = {
+    [key: string]: Challenge[]; // keys are strings, values are arrays of Challenge
+  };
+
+  const flattenChallenges = (apiResponse: ApiResponse) => {
     const flattened: Challenge[] = [];
     for (const key in apiResponse) {
       if (Array.isArray(apiResponse[key])) {
