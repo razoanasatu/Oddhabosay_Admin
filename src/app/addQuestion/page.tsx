@@ -2,7 +2,7 @@
 
 import { baseUrl } from "@/utils/constant";
 import { Edit, Plus, Trash2, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type Subject = {
   id: number;
@@ -48,14 +48,14 @@ const QuestionManagement = () => {
       if (json.success) {
         setQuestions(json.data);
       }
-    } catch (err) {
+    } catch {
       setError("Failed to load questions.");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchSubjects = async () => {
+  const fetchSubjects = useCallback(async () => {
     try {
       const res = await fetch(`${baseUrl}/api/subjects`);
       const json = await res.json();
@@ -65,15 +65,15 @@ const QuestionManagement = () => {
           setFormData((prev) => ({ ...prev, subjectId: json.data[0].id }));
         }
       }
-    } catch (err) {
+    } catch {
       console.error("Error fetching subjects");
     }
-  };
+  }, [formData.subjectId]);
 
   useEffect(() => {
     fetchQuestions();
     fetchSubjects();
-  }, []);
+  }, [fetchSubjects]);
 
   const handleAnswerChange = (index: number, value: string) => {
     const newAnswers = [...formData.answers];
@@ -105,7 +105,7 @@ const QuestionManagement = () => {
       } else {
         setError("Submission failed.");
       }
-    } catch (err) {
+    } catch {
       setError("Submission error");
     } finally {
       setLoading(false);
@@ -128,8 +128,8 @@ const QuestionManagement = () => {
         setShowDeleteModal(false);
         setSelectedQuestion(null);
       }
-    } catch (err) {
-      console.error("Delete failed", err);
+    } catch {
+      console.error("Delete failed");
     } finally {
       setLoading(false);
     }
@@ -163,14 +163,12 @@ const QuestionManagement = () => {
         </button>
       </div>
 
-      {/* Error */}
       {error && (
         <div className="text-red-600 bg-red-100 border px-4 py-2 rounded mb-4">
           {error}
         </div>
       )}
 
-      {/* Table */}
       <div className="overflow-x-auto bg-white rounded shadow">
         <table className="min-w-full">
           <thead className="bg-gray-100">
@@ -253,7 +251,6 @@ const QuestionManagement = () => {
               </button>
             </div>
 
-            {/* Question input */}
             <input
               type="text"
               value={formData.question}
@@ -264,7 +261,6 @@ const QuestionManagement = () => {
               className="w-full border px-3 py-2 rounded"
             />
 
-            {/* Answers */}
             {formData.answers.map((a, i) => (
               <input
                 key={i}
@@ -276,7 +272,6 @@ const QuestionManagement = () => {
               />
             ))}
 
-            {/* Correct answer */}
             <input
               type="number"
               value={formData.correct_answer}
@@ -287,7 +282,6 @@ const QuestionManagement = () => {
               className="w-full border px-3 py-2 rounded"
             />
 
-            {/* Subject dropdown */}
             <select
               value={formData.subjectId}
               onChange={(e) =>
@@ -302,7 +296,6 @@ const QuestionManagement = () => {
               ))}
             </select>
 
-            {/* Score */}
             <input
               type="number"
               value={formData.score}
@@ -313,7 +306,6 @@ const QuestionManagement = () => {
               className="w-full border px-3 py-2 rounded"
             />
 
-            {/* Eligibility flags */}
             <div className="space-y-1">
               {["weekly", "monthly", "mega", "special_event", "practice"].map(
                 (flag) => (
@@ -362,7 +354,6 @@ const QuestionManagement = () => {
         </div>
       )}
 
-      {/* Delete Modal */}
       {showDeleteModal && selectedQuestion && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow max-w-md w-full space-y-4">
