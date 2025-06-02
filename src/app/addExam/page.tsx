@@ -90,7 +90,7 @@ export type Challenge = {
 };
 
 // Simplified form data for create/edit operations
-type ChallengeFormData = {
+interface ChallengeFormData {
   challenge_type: "special_event" | "weekly" | "monthly" | "mega" | "";
   fee: number | "";
   deadline: string;
@@ -105,7 +105,7 @@ type ChallengeFormData = {
   title?: string; // For specialEventDetails title
   content?: string; // For specialEventDetails content
   image?: string; // For specialEventDetails image
-};
+}
 
 const ChallengeManagement = () => {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
@@ -200,7 +200,16 @@ const ChallengeManagement = () => {
     setLoading(true);
     setError("");
     try {
-      const payload: any = {
+      interface Payload {
+        fee: number;
+        quiz_time: number;
+        total_marks: number;
+        total_seats: number;
+        // Include other fields from formData as needed, with their types
+        [key: string]: any; // optional, if formData has other unknown keys
+      }
+
+      const payload: Payload = {
         ...formData,
         fee: Number(formData.fee),
         quiz_time: Number(formData.quiz_time),
