@@ -83,7 +83,7 @@ const WinLaptopDetails: React.FC = () => {
           type="submit"
           className="w-full py-3 px-6 mt-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all text-lg font-medium"
         >
-          💾 Save Laptop Details
+          Save Laptop Details
         </button>
       </form>
 

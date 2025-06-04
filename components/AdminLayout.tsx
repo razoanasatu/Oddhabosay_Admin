@@ -22,7 +22,7 @@ const navItems = [
   { label: "Prize Details", href: "/prizeDetails" },
   { label: "Special Events", href: "/createSpecialEvent" },
   { label: "Win a Laptop", href: "/winLaptopDetails" },
-  { label: "Eligibility", href: "/eligibilityDetails" },
+  { label: "Eligibility Details", href: "/eligibilityDetails" },
   { label: "Participation", href: "/participationPage" },
   //{ label: "Challenge Requirement", href: "/challengeRequirement" },
   { label: "More", href: "/admin/more" },
