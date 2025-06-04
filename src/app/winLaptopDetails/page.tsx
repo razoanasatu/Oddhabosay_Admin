@@ -57,19 +57,21 @@ const WinLaptopDetails: React.FC = () => {
       </h2>
 
       <form onSubmit={handleSubmit} className="grid gap-5">
-        {[
-          { name: "title", label: "Title" },
-          { name: "content", label: "Content" },
-          { name: "message_to_winner", label: "Message to Winner" },
-          { name: "image", label: "Image URL" },
-        ].map(({ name, label }) => (
+        {(
+          [
+            { name: "title", label: "Title" },
+            { name: "content", label: "Content" },
+            { name: "message_to_winner", label: "Message to Winner" },
+            { name: "image", label: "Image URL" },
+          ] as const
+        ).map(({ name, label }) => (
           <div key={name}>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               {label}
             </label>
             <input
               name={name}
-              value={(form as any)[name]}
+              value={form[name]}
               onChange={handleChange}
               placeholder={`Enter ${label}`}
               className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
