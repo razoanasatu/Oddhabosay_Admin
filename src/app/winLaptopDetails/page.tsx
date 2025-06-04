@@ -89,7 +89,7 @@ const WinLaptopDetails: React.FC = () => {
 
       <div className="mt-10">
         <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-4">
-          📄 Saved Laptop Details
+          Saved Laptop Details
         </h3>
         <div className="space-y-6">
           {data.map((item) => (
