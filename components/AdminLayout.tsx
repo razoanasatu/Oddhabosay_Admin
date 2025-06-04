@@ -21,7 +21,9 @@ const navItems = [
   { label: "Challenge Requirements", href: "/challengeRequirement" },
   { label: "Prize Details", href: "/prizeDetails" },
   { label: "Special Events", href: "/createSpecialEvent" },
-  { label: "Win a Laptop", href: "/winLaptop" },
+  { label: "Win a Laptop", href: "/winLaptopDetails" },
+  { label: "Eligibility", href: "/eligibilityDetails" },
+  { label: "Participation", href: "/participationPage" },
   //{ label: "Challenge Requirement", href: "/challengeRequirement" },
   { label: "More", href: "/admin/more" },
 ];
