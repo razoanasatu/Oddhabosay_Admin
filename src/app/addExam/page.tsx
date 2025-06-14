@@ -1615,12 +1615,12 @@ const ChallengeManagement = () => {
               </div>
               <div className="p-6">
                 <p className="text-gray-700">
-                  Are you sure you want to delete the challenge "
+                  Are you sure you want to delete the challenge{" "}
                   <span className="font-semibold">
                     {selectedChallenge?.specialEventDetails?.title ||
                       selectedChallenge?.id}
                   </span>
-                  "? This action cannot be undone.
+                  {"? This action cannot be undone."}
                 </p>
               </div>
               <div className="p-6 border-t flex gap-3 justify-end">
