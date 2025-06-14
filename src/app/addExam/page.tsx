@@ -521,12 +521,11 @@ const ChallengeManagement = () => {
           payload.eventId = Number(formData.eventId);
         }
         // Remove deprecated special event details fields from payload
-        delete (payload as any).title;
-        delete (payload as any).content;
-        delete (payload as any).image;
-      } else {
+        if ("title" in payload) delete payload.title;
+        if ("content" in payload) delete payload.content;
+        if ("image" in payload) delete payload.image;
         // Ensure eventId and event_code are not sent for non-special events
-        delete (payload as any).eventId;
+        if ("eventId" in payload) delete payload.eventId;
         payload.event_code = ""; // Clear event code for non-special events
       }
 
