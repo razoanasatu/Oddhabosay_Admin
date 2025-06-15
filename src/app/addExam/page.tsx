@@ -479,6 +479,7 @@ const ChallengeManagement = () => {
           | "ruleId"
           | "eventId"
         > {
+        challengeId: number; // Required for update
         fee: number;
         quiz_time: number;
         total_marks: number;
@@ -491,6 +492,7 @@ const ChallengeManagement = () => {
 
       const payload: Payload = {
         ...formData,
+        challengeId: selectedChallenge.id,
         fee: Number(formData.fee),
         quiz_time: Number(formData.quiz_time),
         total_marks: Number(formData.total_marks),
@@ -511,7 +513,7 @@ const ChallengeManagement = () => {
             ? undefined
             : Number(formData.eventId),
       };
-
+      console.log("Updating challenge with formData:", payload);
       if (formData.challenge_type === "special_event") {
         // Only assign eventId if it's a number (not an empty string)
         if (typeof formData.eventId === "number") {
@@ -529,14 +531,11 @@ const ChallengeManagement = () => {
         payload.event_code = ""; // Clear event code for non-special events
       }
 
-      const response = await fetch(
-        `${baseUrl}/api/challenges/${selectedChallenge.id}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await fetch(`${baseUrl}/api/challenges/update`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       const data = await response.json();
       if (data.success || response.ok) {
@@ -581,7 +580,7 @@ const ChallengeManagement = () => {
     setError("");
     try {
       const response = await fetch(
-        `${baseUrl}/api/challenges/${selectedChallenge.id}`,
+        `${baseUrl}/api/challenges/delete/${selectedChallenge.id}`,
         {
           method: "DELETE",
         }

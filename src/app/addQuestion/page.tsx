@@ -31,6 +31,7 @@ const QuestionManagement = () => {
     eligibility_flag: ["weekly"],
     score: 10,
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -39,6 +40,9 @@ const QuestionManagement = () => {
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
     null
   );
+
+  // 🔍 Search state
+  const [searchKeyword, setSearchKeyword] = useState("");
 
   const fetchQuestions = async () => {
     try {
@@ -148,9 +152,14 @@ const QuestionManagement = () => {
     setError("");
   };
 
+  // 🔍 Filter questions by subject name
+  const filteredQuestions = questions.filter((q) =>
+    q.subject?.name.toLowerCase().includes(searchKeyword.toLowerCase())
+  );
+
   return (
     <div className="p-4">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Question Management</h1>
         <button
           onClick={() => {
@@ -161,6 +170,31 @@ const QuestionManagement = () => {
         >
           <Plus size={18} /> Add Question
         </button>
+      </div>
+
+      {/* 🔍 Search bar right aligned with icon */}
+      <div className="flex justify-end mb-6">
+        <div className="relative w-full max-w-xs">
+          <input
+            type="text"
+            placeholder="Search by subject (e.g., Math)"
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            className="w-full border px-4 py-2 pl-10 rounded-full"
+          />
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <svg
+              className="w-5 h-5 text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </div>
+        </div>
       </div>
 
       {error && (
@@ -186,14 +220,14 @@ const QuestionManagement = () => {
                   Loading...
                 </td>
               </tr>
-            ) : questions.length === 0 ? (
+            ) : filteredQuestions.length === 0 ? (
               <tr>
-                <td colSpan={4} className="text-center py-4">
-                  No questions found.
+                <td colSpan={4} className="text-center py-4 text-red-500">
+                  No subject found.
                 </td>
               </tr>
             ) : (
-              questions.map((q) => (
+              filteredQuestions.map((q) => (
                 <tr key={q.id} className="border-t hover:bg-gray-50">
                   <td className="p-3">{q.question}</td>
                   <td className="p-3">{q.subject?.name}</td>
@@ -233,7 +267,8 @@ const QuestionManagement = () => {
         </table>
       </div>
 
-      {/* Create / Edit Modal */}
+      {/* Modal and Delete Components remain unchanged — keep them as is */}
+      {/* Create/Edit Modal */}
       {(showCreateModal || showEditModal) && (
         <div className="fixed inset-0 bg-black/20 z-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded shadow-lg w-full max-w-lg space-y-4">
@@ -354,6 +389,7 @@ const QuestionManagement = () => {
         </div>
       )}
 
+      {/* Delete confirmation modal */}
       {showDeleteModal && selectedQuestion && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded shadow max-w-md w-full space-y-4">
