@@ -117,7 +117,6 @@ export type Challenge = {
   eventId: number | null; // For special events
 };
 
-// Simplified form data for create/edit operations
 interface ChallengeFormData {
   challenge_type:
     | "special_event"
@@ -127,12 +126,25 @@ interface ChallengeFormData {
     | "practice"
     | "";
   fee: number | "";
-  deadline: string;
+  // Deadline fields
+  deadlineDate: string; // To hold the date part (e.g., "YYYY-MM-DD")
+  deadlineTime: string; // To hold the time part (e.g., "HH:mm")
+  deadline: string; // Keep this for the combined ISO string that you'll send to the backend
+
   quiz_time: number | "";
   active_status: boolean;
   event_code: string;
-  start_datetime: string;
-  end_datetime: string;
+
+  // Start Datetime fields (NEWLY ADDED)
+  start_datetime_date: string; // To hold the date part (e.g., "YYYY-MM-DD") for the UI input
+  start_datetime_time: string; // To hold the time part (e.g., "HH:mm") for the UI input
+  start_datetime: string; // Keep this for the combined ISO string to send to the backend
+
+  // End Datetime fields (NEWLY ADDED)
+  end_datetime_date: string; // To hold the date part (e.g., "YYYY-MM-DD") for the UI input
+  end_datetime_time: string; // To hold the time part (e.g., "HH:mm") for the UI input
+  end_datetime: string; // Keep this for the combined ISO string to send to the backend
+
   total_marks: number | "";
   total_seats: number | "";
   questionIds: number[]; // Array of selected question IDs
@@ -141,7 +153,6 @@ interface ChallengeFormData {
   ruleId: number | ""; // Single selected rule ID
   eventId: number | ""; // Single selected event ID (for special_event)
 }
-
 const ChallengeManagement = () => {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -153,12 +164,24 @@ const ChallengeManagement = () => {
   const [formData, setFormData] = useState<ChallengeFormData>({
     challenge_type: "",
     fee: "",
-    deadline: "",
+    // Deadline fields
+    deadlineDate: "", // To store the date part (e.g., "YYYY-MM-DD")
+    deadlineTime: "", // To store the time part (e.g., "HH:mm")
+    deadline: "", // Keep this for the combined ISO string to send to the backend
+
     quiz_time: "",
     active_status: true,
     event_code: "",
-    start_datetime: "",
-    end_datetime: "",
+    // Start Datetime fields (initialize them)
+    start_datetime_date: "",
+    start_datetime_time: "",
+    start_datetime: "", // This will be populated from the _date and _time fields
+
+    // End Datetime fields (initialize them)
+    end_datetime_date: "",
+    end_datetime_time: "",
+    end_datetime: "", // This will be populated from the _date and _time fields
+
     total_marks: "",
     total_seats: "",
     questionIds: [],
@@ -294,16 +317,68 @@ const ChallengeManagement = () => {
   ) => {
     const { name, value, type } = e.target;
 
-    if (type === "checkbox") {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: (e.target as HTMLInputElement).checked,
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-  };
+    setFormData((prevData) => {
+      // Start with the previous data and update the current changed field
+      let newFormData = { ...prevData };
 
+      if (type === "checkbox") {
+        newFormData = {
+          ...newFormData,
+          [name]: (e.target as HTMLInputElement).checked,
+        };
+      } else {
+        newFormData = { ...newFormData, [name]: value };
+      }
+
+      // --- Logic for Deadline combination ---
+      // If either deadlineDate or deadlineTime was just changed, or if we're initializing
+      if (
+        name === "deadlineDate" ||
+        name === "deadlineTime" ||
+        !prevData.deadline
+      ) {
+        if (newFormData.deadlineDate && newFormData.deadlineTime) {
+          newFormData.deadline = `${newFormData.deadlineDate}T${newFormData.deadlineTime}:00`;
+        } else {
+          // If one part is missing, set deadline to just the available date or empty
+          newFormData.deadline = newFormData.deadlineDate || "";
+        }
+      }
+
+      // --- Logic for Start Datetime combination ---
+      // If either start_datetime_date or start_datetime_time was just changed, or if we're initializing
+      if (
+        name === "start_datetime_date" ||
+        name === "start_datetime_time" ||
+        !prevData.start_datetime
+      ) {
+        if (
+          newFormData.start_datetime_date &&
+          newFormData.start_datetime_time
+        ) {
+          newFormData.start_datetime = `${newFormData.start_datetime_date}T${newFormData.start_datetime_time}:00`;
+        } else {
+          newFormData.start_datetime = newFormData.start_datetime_date || "";
+        }
+      }
+
+      // --- Logic for End Datetime combination ---
+      // If either end_datetime_date or end_datetime_time was just changed, or if we're initializing
+      if (
+        name === "end_datetime_date" ||
+        name === "end_datetime_time" ||
+        !prevData.end_datetime
+      ) {
+        if (newFormData.end_datetime_date && newFormData.end_datetime_time) {
+          newFormData.end_datetime = `${newFormData.end_datetime_date}T${newFormData.end_datetime_time}:00`;
+        } else {
+          newFormData.end_datetime = newFormData.end_datetime_date || "";
+        }
+      }
+
+      return newFormData;
+    });
+  };
   const handleMultiSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedValues = Array.from(e.target.selectedOptions).map((option) =>
       Number(option.value)
@@ -413,12 +488,25 @@ const ChallengeManagement = () => {
         setFormData({
           challenge_type: "",
           fee: "",
-          deadline: "",
+          // Initialize deadline properties
+          deadlineDate: "", // Added for the date input
+          deadlineTime: "", // Added for the time input
+          deadline: "", // This remains for the combined ISO string to send to the backend
+
           quiz_time: "",
           active_status: true,
           event_code: "",
-          start_datetime: "",
-          end_datetime: "",
+
+          // Initialize start_datetime properties
+          start_datetime_date: "", // Initialize for the date input
+          start_datetime_time: "", // Initialize for the time input
+          start_datetime: "", // This remains for the combined ISO string
+
+          // Initialize end_datetime properties
+          end_datetime_date: "", // Initialize for the date input
+          end_datetime_time: "", // Initialize for the time input
+          end_datetime: "", // This remains for the combined ISO string
+
           total_marks: "",
           total_seats: "",
           questionIds: [],
@@ -544,12 +632,25 @@ const ChallengeManagement = () => {
         setFormData({
           challenge_type: "",
           fee: "",
-          deadline: "",
+          // Initialize deadline properties
+          deadlineDate: "", // Initialize as empty string
+          deadlineTime: "", // Initialize as empty string
+          deadline: "", // Keep this for the combined value
+
           quiz_time: "",
           active_status: true,
           event_code: "",
+
+          // Initialize start_datetime properties (Add these)
+          start_datetime_date: "",
+          start_datetime_time: "",
           start_datetime: "",
+
+          // Initialize end_datetime properties (Add these)
+          end_datetime_date: "",
+          end_datetime_time: "",
           end_datetime: "",
+
           total_marks: "",
           total_seats: "",
           questionIds: [],
@@ -606,12 +707,38 @@ const ChallengeManagement = () => {
     setFormData({
       challenge_type: challenge.challenge_type,
       fee: challenge.fee,
-      deadline: challenge.deadline.split("T")[0],
+      // --- Deadline fields (already fixed) ---
+      deadlineDate: challenge.deadline ? challenge.deadline.split("T")[0] : "",
+      deadlineTime:
+        challenge.deadline && challenge.deadline.split("T")[1]
+          ? challenge.deadline.split("T")[1].substring(0, 5) // "HH:mm"
+          : "",
+      deadline: challenge.deadline, // Keep the original combined string
+
       quiz_time: challenge.quiz_time,
       active_status: challenge.active_status,
       event_code: challenge.event_code || "",
-      start_datetime: challenge.start_datetime.split("T")[0],
-      end_datetime: challenge.end_datetime.split("T")[0],
+
+      // --- Start Datetime fields (FIXED) ---
+      start_datetime_date: challenge.start_datetime
+        ? challenge.start_datetime.split("T")[0]
+        : "",
+      start_datetime_time:
+        challenge.start_datetime && challenge.start_datetime.split("T")[1]
+          ? challenge.start_datetime.split("T")[1].substring(0, 5) // "HH:mm"
+          : "",
+      start_datetime: challenge.start_datetime, // Keep the original combined string
+
+      // --- End Datetime fields (FIXED) ---
+      end_datetime_date: challenge.end_datetime
+        ? challenge.end_datetime.split("T")[0]
+        : "",
+      end_datetime_time:
+        challenge.end_datetime && challenge.end_datetime.split("T")[1]
+          ? challenge.end_datetime.split("T")[1].substring(0, 5) // "HH:mm"
+          : "",
+      end_datetime: challenge.end_datetime, // Keep the original combined string
+
       total_marks: challenge.total_marks,
       total_seats: challenge.total_seats,
       questionIds: challenge.questions
@@ -641,12 +768,25 @@ const ChallengeManagement = () => {
     setFormData({
       challenge_type: "",
       fee: "",
-      deadline: "",
+      // Initialize deadline properties
+      deadlineDate: "", // Initialize the date input field
+      deadlineTime: "", // Initialize the time input field
+      deadline: "", // This will be the combined value, initially empty
+
       quiz_time: "",
       active_status: true,
       event_code: "",
+
+      // Initialize start_datetime properties (Add these)
+      start_datetime_date: "",
+      start_datetime_time: "",
       start_datetime: "",
+
+      // Initialize end_datetime properties (Add these)
+      end_datetime_date: "",
+      end_datetime_time: "",
       end_datetime: "",
+
       total_marks: "",
       total_seats: "",
       questionIds: [],
@@ -869,10 +1009,14 @@ const ChallengeManagement = () => {
                     name="fee"
                     value={formData.fee}
                     onChange={handleFormChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+               [&::-webkit-outer-spin-button]:appearance-none
+               [&::-webkit-inner-spin-button]:appearance-none
+               [-moz-appearance:textfield]"
                     placeholder="Enter fee"
                   />
                 </div>
+
                 <div>
                   <label
                     htmlFor="quiz_time"
@@ -886,10 +1030,14 @@ const ChallengeManagement = () => {
                     name="quiz_time"
                     value={formData.quiz_time}
                     onChange={handleFormChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+               [&::-webkit-outer-spin-button]:appearance-none
+               [&::-webkit-inner-spin-button]:appearance-none
+               [-moz-appearance:textfield]"
                     placeholder="Enter quiz time"
                   />
                 </div>
+
                 <div>
                   <label
                     htmlFor="deadline"
@@ -899,41 +1047,77 @@ const ChallengeManagement = () => {
                   </label>
                   <input
                     type="date"
-                    id="deadline"
-                    name="deadline"
+                    id="deadlineDate"
+                    name="deadlineDate"
                     value={formData.deadline.split("T")[0]}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
+                  />
+                  <input
+                    type="time"
+                    id="deadlineTime"
+                    name="deadlineTime"
+                    value={
+                      formData.deadline.split("T")[1]
+                        ? formData.deadline.split("T")[1].substring(0, 5)
+                        : ""
+                    }
                     onChange={handleFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
                   <label
-                    htmlFor="start_datetime"
+                    htmlFor="start_datetime_date"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
                     Start Date <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
-                    id="start_datetime"
-                    name="start_datetime"
+                    id="start_datetime_date"
+                    name="start_datetime_date"
                     value={formData.start_datetime.split("T")[0]}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
+                  />
+                  <input
+                    type="time"
+                    id="start_datetime_time"
+                    name="start_datetime_time"
+                    value={
+                      formData.start_datetime.split("T")[1]
+                        ? formData.start_datetime.split("T")[1].substring(0, 5)
+                        : ""
+                    }
                     onChange={handleFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
                   <label
-                    htmlFor="end_datetime"
+                    htmlFor="end_datetime_date"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
                     End Date <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
-                    id="end_datetime"
-                    name="end_datetime"
+                    id="end_datetime_date"
+                    name="end_datetime_date"
                     value={formData.end_datetime.split("T")[0]}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
+                  />
+                  <input
+                    type="time"
+                    id="end_datetime_time"
+                    name="end_datetime_time"
+                    value={
+                      formData.end_datetime.split("T")[1]
+                        ? formData.end_datetime.split("T")[1].substring(0, 5)
+                        : ""
+                    }
                     onChange={handleFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
@@ -951,10 +1135,14 @@ const ChallengeManagement = () => {
                     name="total_marks"
                     value={formData.total_marks}
                     onChange={handleFormChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+               [&::-webkit-outer-spin-button]:appearance-none
+               [&::-webkit-inner-spin-button]:appearance-none
+               [-moz-appearance:textfield]"
                     placeholder="Enter total marks"
                   />
                 </div>
+
                 <div>
                   <label
                     htmlFor="total_seats"
@@ -968,7 +1156,10 @@ const ChallengeManagement = () => {
                     name="total_seats"
                     value={formData.total_seats}
                     onChange={handleFormChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+               [&::-webkit-outer-spin-button]:appearance-none
+               [&::-webkit-inner-spin-button]:appearance-none
+               [-moz-appearance:textfield]"
                     placeholder="Enter total seats"
                   />
                 </div>
