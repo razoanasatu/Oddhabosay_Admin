@@ -1,4 +1,3 @@
-// src/app/questionSelection/QuestionSelectorComponent.tsx
 "use client";
 import { baseUrl } from "@/utils/constant";
 import { useEffect, useMemo, useState } from "react";
@@ -6,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 type Subject = {
   id: number;
   name: string;
+  // Removed 'questions' from here as it's processed upon fetch
 };
 
 type Question = {
@@ -13,17 +13,17 @@ type Question = {
   question: string;
   answers: string[];
   correct_answer: number;
-  subjectId: number;
-  subject?: Subject;
+  subjectId: number; // This will be manually added during processing
+  subject?: Subject; // This will be manually added during processing
   eligibility_flag: string[];
   score: number;
-  createdAt: string;
+  createdAt: string; // Add createdAt as it's in your response
 };
 
 type SubjectApiResponse = {
   id: number;
   name: string;
-  questions: Omit<Question, "subjectId" | "subject">[];
+  questions: Omit<Question, "subjectId" | "subject">[]; // Questions without subjectId/subject initially
 };
 
 type Props = {
@@ -38,14 +38,15 @@ const QuestionSelector = ({ onSelect }: Props) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Fetch all data
   useEffect(() => {
-    fetchSubjectsAndQuestions();
+    fetchSubjectsAndQuestions(); // Combined fetch
   }, []);
 
   const fetchSubjectsAndQuestions = async () => {
     try {
       setLoading(true);
-      setError("");
+      setError(""); // Clear previous errors
 
       const res = await fetch(`${baseUrl}/api/subjects`);
       const json = await res.json();
@@ -53,16 +54,18 @@ const QuestionSelector = ({ onSelect }: Props) => {
       if (json.success) {
         const fetchedSubjects: SubjectApiResponse[] = json.data;
         const allProcessedQuestions: Question[] = [];
-        const uniqueSubjects: Subject[] = [];
+        const uniqueSubjects: Subject[] = []; // To store subjects without nested questions
 
         fetchedSubjects.forEach((subjectData) => {
+          // Store the subject itself (without its nested questions for the dropdown)
           uniqueSubjects.push({ id: subjectData.id, name: subjectData.name });
 
+          // Process questions nested within each subject
           subjectData.questions.forEach((q) => {
             allProcessedQuestions.push({
               ...q,
-              subjectId: subjectData.id,
-              subject: { id: subjectData.id, name: subjectData.name },
+              subjectId: subjectData.id, // Add the subjectId to each question
+              subject: { id: subjectData.id, name: subjectData.name }, // Add the subject object
             });
           });
         });
@@ -80,6 +83,7 @@ const QuestionSelector = ({ onSelect }: Props) => {
     }
   };
 
+  // Memoize the filtered questions to optimize performance
   const filteredQuestions = useMemo(() => {
     if (selectedSubjectId === 0) {
       return questions;
@@ -191,4 +195,4 @@ const QuestionSelector = ({ onSelect }: Props) => {
   );
 };
 
-export default QuestionSelector; // Still export it, but it won't be the page's default export directly.
+export default QuestionSelector;
