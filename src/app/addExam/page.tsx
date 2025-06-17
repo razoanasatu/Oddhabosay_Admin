@@ -201,6 +201,7 @@ const ChallengeManagement = () => {
   // NOTE: 'questions' state is no longer needed as a source for the dropdown,
   // but we keep it if other parts of the component or UI might still need a global list of all questions.
   // If not, you can remove `setQuestions` and related `fetchQuestions` call from useEffect.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [questions, setQuestions] = useState<Question[]>([]); // Still needed if you fetch all questions, otherwise can be removed.
 
   const [prizeDetailsOptions, setPrizeDetailsOptions] = useState<
