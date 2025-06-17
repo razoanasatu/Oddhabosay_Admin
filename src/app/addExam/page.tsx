@@ -1,4 +1,5 @@
 "use client";
+import QuestionSelector from "@/app/questionSelection/page";
 import { baseUrl } from "@/utils/constant";
 import { Edit, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -54,7 +55,7 @@ export type SpecialEventDetails = {
 };
 
 export type Question = {
-  // New type for questions
+  // New type for questions (Matches the type from QuestionSelector)
   id: number;
   question: string;
   answers: string[];
@@ -62,7 +63,9 @@ export type Question = {
   score: number;
   eligibility_flag: string[];
   createdAt: string;
-  subject: {
+  subjectId: number; // Add subjectId as per QuestionSelector's processed type
+  subject?: {
+    // Make optional as it might not always be nested initially
     id: number;
     name: string;
   };
@@ -153,6 +156,7 @@ interface ChallengeFormData {
   ruleId: number | ""; // Single selected rule ID
   eventId: number | ""; // Single selected event ID (for special_event)
 }
+
 const ChallengeManagement = () => {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -194,7 +198,11 @@ const ChallengeManagement = () => {
   const [error, setError] = useState("");
 
   // States for dropdown data
-  const [questions, setQuestions] = useState<Question[]>([]);
+  // NOTE: 'questions' state is no longer needed as a source for the dropdown,
+  // but we keep it if other parts of the component or UI might still need a global list of all questions.
+  // If not, you can remove `setQuestions` and related `fetchQuestions` call from useEffect.
+  const [questions, setQuestions] = useState<Question[]>([]); // Still needed if you fetch all questions, otherwise can be removed.
+
   const [prizeDetailsOptions, setPrizeDetailsOptions] = useState<
     PrizeDetails[]
   >([]);
@@ -203,6 +211,12 @@ const ChallengeManagement = () => {
   >([]);
   const [rules, setRules] = useState<Rule[]>([]);
   const [events, setEvents] = useState<Event[]>([]); // For special event types
+
+  // NEW STATES FOR QUESTION SELECTOR INTEGRATION
+  const [isQuestionSelectorOpen, setIsQuestionSelectorOpen] = useState(false);
+  const [selectedQuestionsDetails, setSelectedQuestionsDetails] = useState<
+    Question[]
+  >([]); // To store full question objects for display and management
 
   // Helper to flatten challenges from API response
   type ApiResponse = {
@@ -238,13 +252,18 @@ const ChallengeManagement = () => {
     }
   };
 
-  // --- Fetching Dropdown Data ---
+  // --- Fetching Dropdown Data (excluding questions as QuestionSelector handles its own fetch) ---
+  // The fetchQuestions is still here, but if QuestionSelector is truly standalone,
+  // you might not need this fetch anymore for the dropdown.
+  // However, `handleRemoveSelectedQuestion` currently relies on `questions` state
+  // to find the question detail from ID, which won't work if it's not fetched.
+  // The better approach is to use `selectedQuestionsDetails` for tag display.
   const fetchQuestions = async () => {
     try {
       const response = await fetch(`${baseUrl}/api/question-bank`);
       const data = await response.json();
       if (response.ok && data.success) {
-        setQuestions(data.data);
+        setQuestions(data.data); // Keep this if `handleRemoveSelectedQuestion` still uses it to look up question details.
       } else {
         console.error("Failed to fetch questions:", data.message);
       }
@@ -379,13 +398,42 @@ const ChallengeManagement = () => {
       return newFormData;
     });
   };
-  const handleMultiSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedValues = Array.from(e.target.selectedOptions).map((option) =>
-      Number(option.value)
+
+  // REMOVE: This handler is for a multi-select dropdown, which we are replacing.
+  // const handleMultiSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  //   const selectedValues = Array.from(e.target.selectedOptions).map((option) =>
+  //     Number(option.value)
+  //   );
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     questionIds: selectedValues,
+  //   }));
+  // };
+
+  // NEW: Function to open the QuestionSelector modal/pop-up
+  const handleOpenQuestionSelector = () => {
+    setIsQuestionSelectorOpen(true);
+  };
+
+  // NEW: Function to handle the selection from QuestionSelector
+  const handleQuestionsSelected = (selectedQs: Question[]) => {
+    setSelectedQuestionsDetails(selectedQs);
+    setFormData((prev) => ({
+      ...prev,
+      questionIds: selectedQs.map((q) => q.id),
+    }));
+    setIsQuestionSelectorOpen(false); // Close the selector
+  };
+
+  // MODIFIED: Function to remove a selected question from the tags
+  // It now primarily works on `selectedQuestionsDetails` and then updates `formData.questionIds`
+  const handleRemoveSelectedQuestion = (idToRemove: number) => {
+    setSelectedQuestionsDetails((prev) =>
+      prev.filter((q) => q.id !== idToRemove)
     );
     setFormData((prev) => ({
       ...prev,
-      questionIds: selectedValues,
+      questionIds: prev.questionIds.filter((id) => id !== idToRemove),
     }));
   };
 
@@ -423,6 +471,12 @@ const ChallengeManagement = () => {
           | "challengeRequirementId"
           | "ruleId"
           | "eventId"
+          | "deadlineDate" // Remove UI-specific fields from payload
+          | "deadlineTime" // Remove UI-specific fields from payload
+          | "start_datetime_date" // Remove UI-specific fields from payload
+          | "start_datetime_time" // Remove UI-specific fields from payload
+          | "end_datetime_date" // Remove UI-specific fields from payload
+          | "end_datetime_time" // Remove UI-specific fields from payload
         > {
         fee: number;
         quiz_time: number;
@@ -467,9 +521,9 @@ const ChallengeManagement = () => {
           payload.eventId = Number(formData.eventId);
         }
         // Remove deprecated special event details fields from payload
-        if ("title" in payload) delete payload.title;
-        if ("content" in payload) delete payload.content;
-        if ("image" in payload) delete payload.image;
+        if ("title" in payload) delete payload.title; // These fields are not on ChallengeFormData payload
+        if ("content" in payload) delete payload.content; // These fields are not on ChallengeFormData payload
+        if ("image" in payload) delete payload.image; // These fields are not on ChallengeFormData payload
       } else {
         // Ensure eventId and event_code are not sent for non-special events
         if ("eventId" in payload) delete payload.eventId;
@@ -485,28 +539,22 @@ const ChallengeManagement = () => {
       const data = await response.json();
       if (data.success || response.ok) {
         setShowCreateModal(false);
+        // Clear all form data and selected questions details after successful creation
         setFormData({
           challenge_type: "",
           fee: "",
-          // Initialize deadline properties
-          deadlineDate: "", // Added for the date input
-          deadlineTime: "", // Added for the time input
-          deadline: "", // This remains for the combined ISO string to send to the backend
-
+          deadlineDate: "",
+          deadlineTime: "",
+          deadline: "",
           quiz_time: "",
           active_status: true,
           event_code: "",
-
-          // Initialize start_datetime properties
-          start_datetime_date: "", // Initialize for the date input
-          start_datetime_time: "", // Initialize for the time input
-          start_datetime: "", // This remains for the combined ISO string
-
-          // Initialize end_datetime properties
-          end_datetime_date: "", // Initialize for the date input
-          end_datetime_time: "", // Initialize for the time input
-          end_datetime: "", // This remains for the combined ISO string
-
+          start_datetime_date: "",
+          start_datetime_time: "",
+          start_datetime: "",
+          end_datetime_date: "",
+          end_datetime_time: "",
+          end_datetime: "",
           total_marks: "",
           total_seats: "",
           questionIds: [],
@@ -515,6 +563,7 @@ const ChallengeManagement = () => {
           ruleId: "",
           eventId: "",
         });
+        setSelectedQuestionsDetails([]); // Clear selected question details
         fetchChallenges();
       } else {
         setError(data.message || "Failed to create challenge");
@@ -566,6 +615,12 @@ const ChallengeManagement = () => {
           | "challengeRequirementId"
           | "ruleId"
           | "eventId"
+          | "deadlineDate" // Remove UI-specific fields from payload
+          | "deadlineTime" // Remove UI-specific fields from payload
+          | "start_datetime_date" // Remove UI-specific fields from payload
+          | "start_datetime_time" // Remove UI-specific fields from payload
+          | "end_datetime_date" // Remove UI-specific fields from payload
+          | "end_datetime_time" // Remove UI-specific fields from payload
         > {
         challengeId: number; // Required for update
         fee: number;
@@ -602,6 +657,7 @@ const ChallengeManagement = () => {
             : Number(formData.eventId),
       };
       console.log("Updating challenge with formData:", payload);
+
       if (formData.challenge_type === "special_event") {
         // Only assign eventId if it's a number (not an empty string)
         if (typeof formData.eventId === "number") {
@@ -610,10 +666,11 @@ const ChallengeManagement = () => {
           // If it's a string from select, convert to number
           payload.eventId = Number(formData.eventId);
         }
-        // Remove deprecated special event details fields from payload
-        if ("title" in payload) delete payload.title;
-        if ("content" in payload) delete payload.content;
-        if ("image" in payload) delete payload.image;
+        // Remove deprecated special event details fields from payload (these are not on ChallengeFormData payload)
+        // if ("title" in payload) delete payload.title;
+        // if ("content" in payload) delete payload.content;
+        // if ("image" in payload) delete payload.image;
+      } else {
         // Ensure eventId and event_code are not sent for non-special events
         if ("eventId" in payload) delete payload.eventId;
         payload.event_code = ""; // Clear event code for non-special events
@@ -629,28 +686,22 @@ const ChallengeManagement = () => {
       if (data.success || response.ok) {
         setShowEditModal(false);
         setSelectedChallenge(null);
+        // Clear all form data and selected questions details after successful update
         setFormData({
           challenge_type: "",
           fee: "",
-          // Initialize deadline properties
-          deadlineDate: "", // Initialize as empty string
-          deadlineTime: "", // Initialize as empty string
-          deadline: "", // Keep this for the combined value
-
+          deadlineDate: "",
+          deadlineTime: "",
+          deadline: "",
           quiz_time: "",
           active_status: true,
           event_code: "",
-
-          // Initialize start_datetime properties (Add these)
           start_datetime_date: "",
           start_datetime_time: "",
           start_datetime: "",
-
-          // Initialize end_datetime properties (Add these)
           end_datetime_date: "",
           end_datetime_time: "",
           end_datetime: "",
-
           total_marks: "",
           total_seats: "",
           questionIds: [],
@@ -659,6 +710,7 @@ const ChallengeManagement = () => {
           ruleId: "",
           eventId: "",
         });
+        setSelectedQuestionsDetails([]); // Clear selected question details
         fetchChallenges();
       } else {
         setError(data.message || "Failed to update challenge");
@@ -702,12 +754,12 @@ const ChallengeManagement = () => {
     }
   };
 
+  // MODIFIED: Handle edit to populate `selectedQuestionsDetails`
   const handleEdit = (challenge: Challenge) => {
     setSelectedChallenge(challenge);
     setFormData({
       challenge_type: challenge.challenge_type,
       fee: challenge.fee,
-      // --- Deadline fields (already fixed) ---
       deadlineDate: challenge.deadline ? challenge.deadline.split("T")[0] : "",
       deadlineTime:
         challenge.deadline && challenge.deadline.split("T")[1]
@@ -719,7 +771,6 @@ const ChallengeManagement = () => {
       active_status: challenge.active_status,
       event_code: challenge.event_code || "",
 
-      // --- Start Datetime fields (FIXED) ---
       start_datetime_date: challenge.start_datetime
         ? challenge.start_datetime.split("T")[0]
         : "",
@@ -729,7 +780,6 @@ const ChallengeManagement = () => {
           : "",
       start_datetime: challenge.start_datetime, // Keep the original combined string
 
-      // --- End Datetime fields (FIXED) ---
       end_datetime_date: challenge.end_datetime
         ? challenge.end_datetime.split("T")[0]
         : "",
@@ -754,6 +804,8 @@ const ChallengeManagement = () => {
       ruleId: challenge.rules ? challenge.rules.id : "",
       eventId: challenge.eventId || "", // Populate eventId for special challenges
     });
+    // Populate selectedQuestionsDetails with the full question objects from the challenge
+    setSelectedQuestionsDetails(challenge.questions || []);
     setShowEditModal(true);
     setError("");
   };
@@ -764,29 +816,23 @@ const ChallengeManagement = () => {
     setError("");
   };
 
+  // MODIFIED: Handle create to clear `selectedQuestionsDetails`
   const handleCreate = () => {
     setFormData({
       challenge_type: "",
       fee: "",
-      // Initialize deadline properties
-      deadlineDate: "", // Initialize the date input field
-      deadlineTime: "", // Initialize the time input field
-      deadline: "", // This will be the combined value, initially empty
-
+      deadlineDate: "",
+      deadlineTime: "",
+      deadline: "",
       quiz_time: "",
       active_status: true,
       event_code: "",
-
-      // Initialize start_datetime properties (Add these)
       start_datetime_date: "",
       start_datetime_time: "",
       start_datetime: "",
-
-      // Initialize end_datetime properties (Add these)
       end_datetime_date: "",
       end_datetime_time: "",
       end_datetime: "",
-
       total_marks: "",
       total_seats: "",
       questionIds: [],
@@ -795,26 +841,23 @@ const ChallengeManagement = () => {
       ruleId: "",
       eventId: "",
     });
+    setSelectedQuestionsDetails([]); // Clear selected question details when creating new
     setShowCreateModal(true);
     setError("");
   };
 
-  const handleRemoveSelectedQuestion = (idToRemove: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      questionIds: prev.questionIds.filter((id) => id !== idToRemove),
-    }));
-  };
+  // The `handleMultiSelectChange` is now removed as we're no longer using the multi-select dropdown.
+  // The `handleRemoveSelectedQuestion` function is still needed and has been adapted
+  // to remove from both `selectedQuestionsDetails` and `formData.questionIds`.
 
   useEffect(() => {
     fetchChallenges();
-    fetchQuestions();
+    fetchQuestions(); // Keep this if other parts of the component need the full list, otherwise can be removed.
     fetchPrizeDetails();
     fetchChallengeRequirements();
     fetchRules();
     fetchEvents(); // Fetch events on component mount
   }, []);
-
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
@@ -1163,8 +1206,7 @@ const ChallengeManagement = () => {
                     placeholder="Enter total seats"
                   />
                 </div>
-
-                {/* New Dropdown Fields */}
+                {/* New Question Selection Section */}
                 <div>
                   <label
                     htmlFor="questionIds"
@@ -1173,59 +1215,66 @@ const ChallengeManagement = () => {
                     Questions <span className="text-red-500">*</span>
                   </label>
 
-                  {/* Selected questions as tags */}
-                  {formData.questionIds.length > 0 && (
+                  {/* Display selected questions as tags */}
+                  {selectedQuestionsDetails.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-2">
-                      {formData.questionIds.map((id) => {
-                        const selectedQuestion = questions.find(
-                          (q) => q.id === id
-                        );
-                        return (
-                          <span
-                            key={id}
-                            className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+                      {selectedQuestionsDetails.map((q) => (
+                        <span
+                          key={q.id}
+                          className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+                        >
+                          {q.question.substring(0, 30)}...
+                          <button
+                            type="button"
+                            className="text-blue-600 hover:text-blue-800 ml-1"
+                            onClick={() => handleRemoveSelectedQuestion(q.id)}
                           >
-                            {selectedQuestion
-                              ? selectedQuestion.question.substring(0, 30)
-                              : `Question ${id}`}
-                            <button
-                              type="button"
-                              className="text-blue-600 hover:text-blue-800 ml-1"
-                              onClick={() => handleRemoveSelectedQuestion(id)}
-                            >
-                              ×
-                            </button>
-                          </span>
-                        );
-                      })}
+                            ×
+                          </button>
+                        </span>
+                      ))}
                     </div>
                   )}
 
-                  {/* Multi-select dropdown */}
-                  <select
-                    id="questionIds"
-                    name="questionIds"
-                    multiple
-                    value={formData.questionIds.map(String)} // convert numbers to strings for <select>
-                    onChange={handleMultiSelectChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-40 overflow-y-auto"
+                  {/* "Add Question" button */}
+                  <button
+                    type="button"
+                    onClick={handleOpenQuestionSelector}
+                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                   >
-                    {questions.length > 0 ? (
-                      questions.map((q) => (
-                        <option key={q.id} value={q.id}>
-                          {q.id} - {q.question.substring(0, 50)}...
-                        </option>
-                      ))
-                    ) : (
-                      <option disabled>No questions available</option>
-                    )}
-                  </select>
+                    Add Questions
+                  </button>
 
-                  <p className="text-xs text-gray-500 mt-1">
-                    Hold Ctrl (Windows) or Cmd (Mac) to select multiple
-                  </p>
+                  {/* Render the QuestionSelector component as a modal/pop-up */}
+                  {isQuestionSelectorOpen && (
+                    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
+                      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[90vh] overflow-hidden flex flex-col">
+                        <div className="flex justify-between items-center p-4 border-b">
+                          <h2 className="text-xl font-semibold">
+                            Select Questions
+                          </h2>
+                          <button
+                            onClick={() => setIsQuestionSelectorOpen(false)}
+                            className="text-gray-500 hover:text-gray-800 text-2xl"
+                          >
+                            &times;
+                          </button>
+                        </div>
+                        <div className="flex-grow overflow-y-auto">
+                          <QuestionSelector
+                            onSelect={handleQuestionsSelected}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.questionIds.length === 0 && (
+                    <p className="text-red-500 text-sm mt-2">
+                      Please select at least one question.
+                    </p>
+                  )}
                 </div>
-
                 <div>
                   <label
                     htmlFor="prizeDetailsId"
@@ -1554,7 +1603,7 @@ const ChallengeManagement = () => {
                   />
                 </div>
 
-                {/* New Dropdown Fields for Edit */}
+                {/* Question Selection Section for Edit Modal */}
                 <div>
                   <label
                     htmlFor="questionIds"
@@ -1563,59 +1612,67 @@ const ChallengeManagement = () => {
                     Questions <span className="text-red-500">*</span>
                   </label>
 
-                  {/* Selected questions as tags */}
-                  {formData.questionIds.length > 0 && (
+                  {/* Display selected questions as tags */}
+                  {selectedQuestionsDetails.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-2">
-                      {formData.questionIds.map((id) => {
-                        const selectedQuestion = questions.find(
-                          (q) => q.id === id
-                        );
-                        return (
-                          <span
-                            key={id}
-                            className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+                      {selectedQuestionsDetails.map((q) => (
+                        <span
+                          key={q.id}
+                          className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+                        >
+                          {q.question.substring(0, 30)}...
+                          <button
+                            type="button"
+                            className="text-blue-600 hover:text-blue-800 ml-1"
+                            onClick={() => handleRemoveSelectedQuestion(q.id)}
                           >
-                            {selectedQuestion
-                              ? selectedQuestion.question.substring(0, 30)
-                              : `Question ${id}`}
-                            <button
-                              type="button"
-                              className="text-blue-600 hover:text-blue-800 ml-1"
-                              onClick={() => handleRemoveSelectedQuestion(id)}
-                            >
-                              ×
-                            </button>
-                          </span>
-                        );
-                      })}
+                            ×
+                          </button>
+                        </span>
+                      ))}
                     </div>
                   )}
 
-                  {/* Multi-select dropdown */}
-                  <select
-                    id="questionIds"
-                    name="questionIds"
-                    multiple
-                    value={formData.questionIds.map(String)} // convert numbers to strings for <select>
-                    onChange={handleMultiSelectChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-40 overflow-y-auto"
+                  {/* "Add Question" button */}
+                  <button
+                    type="button"
+                    onClick={handleOpenQuestionSelector} // Re-use the same handler
+                    className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                   >
-                    {questions.length > 0 ? (
-                      questions.map((q) => (
-                        <option key={q.id} value={q.id}>
-                          {q.id} - {q.question.substring(0, 50)}...
-                        </option>
-                      ))
-                    ) : (
-                      <option disabled>No questions available</option>
-                    )}
-                  </select>
+                    Add Questions
+                  </button>
 
-                  <p className="text-xs text-gray-500 mt-1">
-                    Hold Ctrl (Windows) or Cmd (Mac) to select multiple
-                  </p>
+                  {formData.questionIds.length === 0 && (
+                    <p className="text-red-500 text-sm mt-2">
+                      Please select at least one question.
+                    </p>
+                  )}
                 </div>
 
+                {/* Render the QuestionSelector component as a modal/pop-up (place this outside your form but within your ChallengeManagement component's render method) */}
+                {/* This part remains the same as in your previous implementation and should be placed
+    once within the ChallengeManagement component, not duplicated for create and edit forms.
+    It's controlled by `isQuestionSelectorOpen` state. */}
+                {isQuestionSelectorOpen && (
+                  <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[90vh] overflow-hidden flex flex-col">
+                      <div className="flex justify-between items-center p-4 border-b">
+                        <h2 className="text-xl font-semibold">
+                          Select Questions
+                        </h2>
+                        <button
+                          onClick={() => setIsQuestionSelectorOpen(false)}
+                          className="text-gray-500 hover:text-gray-800 text-2xl"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                      <div className="flex-grow overflow-y-auto">
+                        <QuestionSelector onSelect={handleQuestionsSelected} />
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div>
                   <label
                     htmlFor="prizeDetailsId"
