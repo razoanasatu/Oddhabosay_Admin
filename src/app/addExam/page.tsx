@@ -3,7 +3,7 @@ import QuestionSelector from "@/app/questionSelection/page";
 import { baseUrl } from "@/utils/constant";
 import { Edit, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
-
+//import QuestionSelector from "../questionSelection/QuestionSelector";
 // Define Challenge types based on your API response
 type PrizePosition = {
   position: string;
