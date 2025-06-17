@@ -15,7 +15,7 @@ type Question = {
   answers: string[];
   correct_answer: number;
   subjectId: number;
-  subject?: Subject;
+  subject?: Subject; // Optional, as it might be populated after fetching subjects
   eligibility_flag: string[];
   score: number;
 };
@@ -41,8 +41,7 @@ const QuestionManagement = () => {
     null
   );
 
-  // 🔍 Search state
-  const [searchKeyword, setSearchKeyword] = useState("");
+  // Removed: searchKeyword state as this page is for management, not selection/search.
 
   const fetchQuestions = async () => {
     try {
@@ -51,8 +50,11 @@ const QuestionManagement = () => {
       const json = await res.json();
       if (json.success) {
         setQuestions(json.data);
+      } else {
+        setError(json.message || "Failed to load questions.");
       }
-    } catch {
+    } catch (err) {
+      console.error("Error fetching questions:", err);
       setError("Failed to load questions.");
     } finally {
       setLoading(false);
@@ -65,14 +67,15 @@ const QuestionManagement = () => {
       const json = await res.json();
       if (json.success) {
         setSubjects(json.data);
-        if (!formData.subjectId) {
+        // Set default subjectId if not already set, using the first subject from fetched data
+        if (!formData.subjectId && json.data.length > 0) {
           setFormData((prev) => ({ ...prev, subjectId: json.data[0].id }));
         }
       }
-    } catch {
-      console.error("Error fetching subjects");
+    } catch (err) {
+      console.error("Error fetching subjects:", err);
     }
-  }, [formData.subjectId]);
+  }, [formData.subjectId]); // Dependency added to ensure it re-runs if formData.subjectId changes from outside
 
   useEffect(() => {
     fetchQuestions();
@@ -104,20 +107,21 @@ const QuestionManagement = () => {
       if (res.ok && json.success) {
         setShowCreateModal(false);
         setShowEditModal(false);
-        fetchQuestions();
-        resetForm();
+        fetchQuestions(); // Refresh the list of questions
+        resetForm(); // Clear the form after submission
       } else {
-        setError("Submission failed.");
+        setError(json.message || "Submission failed. Please try again.");
       }
-    } catch {
-      setError("Submission error");
+    } catch (err) {
+      console.error("Submission error:", err);
+      setError("Submission error. Please check your network connection.");
     } finally {
       setLoading(false);
     }
   };
 
   const deleteQuestion = async () => {
-    if (!selectedQuestion) return;
+    if (!selectedQuestion) return; // Should not happen if modal is correctly controlled
     setLoading(true);
     try {
       const res = await fetch(
@@ -128,12 +132,16 @@ const QuestionManagement = () => {
       );
 
       if (res.ok) {
-        fetchQuestions();
+        fetchQuestions(); // Refresh the list after deletion
         setShowDeleteModal(false);
-        setSelectedQuestion(null);
+        setSelectedQuestion(null); // Clear selected question
+      } else {
+        const json = await res.json();
+        setError(json.message || "Deletion failed.");
       }
-    } catch {
-      console.error("Delete failed");
+    } catch (err) {
+      console.error("Delete failed:", err);
+      setError("Delete failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -144,7 +152,8 @@ const QuestionManagement = () => {
       question: "",
       answers: ["", "", "", ""],
       correct_answer: 0,
-      subjectId: subjects[0]?.id ?? 0,
+      // Set subjectId to the first available subject if subjects exist
+      subjectId: subjects.length > 0 ? subjects[0].id : 0,
       eligibility_flag: ["weekly"],
       score: 10,
     });
@@ -152,268 +161,302 @@ const QuestionManagement = () => {
     setError("");
   };
 
-  // 🔍 Filter questions by subject name
-  const filteredQuestions = questions.filter((q) =>
-    q.subject?.name.toLowerCase().includes(searchKeyword.toLowerCase())
-  );
+  // Removed: filteredQuestions logic, as search is removed from this page.
+  // The table will now directly display the 'questions' state.
 
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Question Management</h1>
-        <button
-          onClick={() => {
-            resetForm();
-            setShowCreateModal(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          <Plus size={18} /> Add Question
-        </button>
-      </div>
+    <div className="p-4 bg-gray-50 min-h-screen">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+          <h1 className="text-3xl font-bold text-gray-800">
+            Question Management
+          </h1>
+          <button
+            onClick={() => {
+              resetForm();
+              setShowCreateModal(true);
+            }}
+            className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 ease-in-out shadow-md"
+          >
+            <Plus size={18} /> Add New Question
+          </button>
+        </div>
 
-      {/* 🔍 Search bar right aligned with icon */}
-      <div className="flex justify-end mb-6">
-        <div className="relative w-full max-w-xs">
-          <input
-            type="text"
-            placeholder="Search by subject (e.g., Math)"
-            value={searchKeyword}
-            onChange={(e) => setSearchKeyword(e.target.value)}
-            className="w-full border px-4 py-2 pl-10 rounded-full"
-          />
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <svg
-              className="w-5 h-5 text-gray-500"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
+        {/* Removed: Search bar section */}
+
+        {error && (
+          <div className="text-red-700 bg-red-100 border border-red-300 px-4 py-3 rounded-md mb-6 shadow-sm">
+            {error}
           </div>
-        </div>
-      </div>
+        )}
 
-      {error && (
-        <div className="text-red-600 bg-red-100 border px-4 py-2 rounded mb-4">
-          {error}
-        </div>
-      )}
-
-      <div className="overflow-x-auto bg-white rounded shadow">
-        <table className="min-w-full">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="text-left p-3 text-sm font-semibold">Question</th>
-              <th className="text-left p-3 text-sm font-semibold">Subject</th>
-              <th className="text-left p-3 text-sm font-semibold">Score</th>
-              <th className="text-right p-3 text-sm font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+        <div className="overflow-x-auto bg-white rounded-lg shadow-lg">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-100">
               <tr>
-                <td colSpan={4} className="text-center py-4">
-                  Loading...
-                </td>
+                <th className="text-left p-4 text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  Question
+                </th>
+                <th className="text-left p-4 text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  Subject
+                </th>
+                <th className="text-left p-4 text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  Score
+                </th>
+                <th className="text-right p-4 text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
-            ) : filteredQuestions.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="text-center py-4 text-red-500">
-                  No subject found.
-                </td>
-              </tr>
-            ) : (
-              filteredQuestions.map((q) => (
-                <tr key={q.id} className="border-t hover:bg-gray-50">
-                  <td className="p-3">{q.question}</td>
-                  <td className="p-3">{q.subject?.name}</td>
-                  <td className="p-3">{q.score}</td>
-                  <td className="p-3 text-right">
-                    <button
-                      onClick={() => {
-                        setSelectedQuestion(q);
-                        setFormData({
-                          question: q.question,
-                          answers: q.answers,
-                          correct_answer: q.correct_answer,
-                          subjectId: q.subjectId,
-                          eligibility_flag: q.eligibility_flag,
-                          score: q.score,
-                        });
-                        setShowEditModal(true);
-                      }}
-                      className="text-blue-600 hover:text-blue-800 mr-2"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSelectedQuestion(q);
-                        setShowDeleteModal(true);
-                      }}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {loading ? (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="text-center py-10 text-lg text-blue-500"
+                  >
+                    Loading questions...
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Modal and Delete Components remain unchanged — keep them as is */}
-      {/* Create/Edit Modal */}
-      {(showCreateModal || showEditModal) && (
-        <div className="fixed inset-0 bg-black/20 z-50 flex justify-center items-center">
-          <div className="bg-white p-6 rounded shadow-lg w-full max-w-lg space-y-4">
-            <div className="flex justify-between items-center border-b pb-2">
-              <h2 className="text-xl font-semibold">
-                {showEditModal ? "Edit Question" : "Create Question"}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setShowEditModal(false);
-                }}
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <input
-              type="text"
-              value={formData.question}
-              onChange={(e) =>
-                setFormData({ ...formData, question: e.target.value })
-              }
-              placeholder="Enter question"
-              className="w-full border px-3 py-2 rounded"
-            />
-
-            {formData.answers.map((a, i) => (
-              <input
-                key={i}
-                type="text"
-                placeholder={`Option ${i + 1}`}
-                value={a}
-                onChange={(e) => handleAnswerChange(i, e.target.value)}
-                className="w-full border px-3 py-2 rounded"
-              />
-            ))}
-
-            <input
-              type="number"
-              value={formData.correct_answer}
-              onChange={(e) =>
-                setFormData({ ...formData, correct_answer: +e.target.value })
-              }
-              placeholder="Correct answer index (0-based)"
-              className="w-full border px-3 py-2 rounded"
-            />
-
-            <select
-              value={formData.subjectId}
-              onChange={(e) =>
-                setFormData({ ...formData, subjectId: +e.target.value })
-              }
-              className="w-full border px-3 py-2 rounded"
-            >
-              {subjects.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="number"
-              value={formData.score}
-              onChange={(e) =>
-                setFormData({ ...formData, score: +e.target.value })
-              }
-              placeholder="Score"
-              className="w-full border px-3 py-2 rounded"
-            />
-
-            <div className="space-y-1">
-              {["weekly", "monthly", "mega", "special_event", "practice"].map(
-                (flag) => (
-                  <label key={flag} className="inline-flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      value={flag}
-                      checked={formData.eligibility_flag.includes(flag)}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setFormData((prev) => ({
-                          ...prev,
-                          eligibility_flag: prev.eligibility_flag.includes(
-                            value
-                          )
-                            ? prev.eligibility_flag.filter((f) => f !== value)
-                            : [...prev.eligibility_flag, value],
-                        }));
-                      }}
-                    />
-                    <span className="text-sm">{flag}</span>
-                  </label>
+              ) : questions.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="text-center py-10 text-gray-500 text-lg"
+                  >
+                    No questions available. Click "Add New Question" to get
+                    started.
+                  </td>
+                </tr>
+              ) : (
+                questions.map(
+                  (
+                    q // Directly map over 'questions' state
+                  ) => (
+                    <tr
+                      key={q.id}
+                      className="border-t hover:bg-gray-50 transition-colors duration-150 ease-in-out"
+                    >
+                      <td className="p-4 text-gray-900 max-w-lg overflow-hidden text-ellipsis whitespace-nowrap">
+                        {q.question}
+                      </td>
+                      <td className="p-4 text-gray-700">
+                        {q.subject?.name || "N/A"}{" "}
+                        {/* Display subject name directly */}
+                      </td>
+                      <td className="p-4 text-gray-700">{q.score}</td>
+                      <td className="p-4 text-right flex items-center justify-end space-x-2">
+                        <button
+                          onClick={() => {
+                            setSelectedQuestion(q);
+                            setFormData({
+                              question: q.question,
+                              answers: q.answers,
+                              correct_answer: q.correct_answer,
+                              subjectId: q.subjectId,
+                              eligibility_flag: q.eligibility_flag,
+                              score: q.score,
+                            });
+                            setShowEditModal(true);
+                          }}
+                          className="p-2 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-150"
+                          title="Edit Question"
+                        >
+                          <Edit size={18} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedQuestion(q);
+                            setShowDeleteModal(true);
+                          }}
+                          className="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors duration-150"
+                          title="Delete Question"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  )
                 )
               )}
-            </div>
+            </tbody>
+          </table>
+        </div>
 
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setShowEditModal(false);
-                }}
-                className="px-4 py-2 border rounded"
+        {/* Create/Edit Modal */}
+        {(showCreateModal || showEditModal) && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center p-4">
+            <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg space-y-5 transform transition-all duration-300 scale-100 opacity-100">
+              <div className="flex justify-between items-center border-b pb-3 mb-4">
+                <h2 className="text-2xl font-semibold text-gray-800">
+                  {showEditModal ? "Edit Question" : "Create New Question"}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setShowEditModal(false);
+                    resetForm(); // Ensure form is reset on close
+                  }}
+                  className="text-gray-500 hover:text-gray-700 text-3xl transition-colors duration-150"
+                  aria-label="Close modal"
+                >
+                  <X size={28} />
+                </button>
+              </div>
+
+              <input
+                type="text"
+                value={formData.question}
+                onChange={(e) =>
+                  setFormData({ ...formData, question: e.target.value })
+                }
+                placeholder="Enter question text"
+                className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+              />
+
+              {formData.answers.map((a, i) => (
+                <input
+                  key={i}
+                  type="text"
+                  placeholder={`Option ${i + 1}`}
+                  value={a}
+                  onChange={(e) => handleAnswerChange(i, e.target.value)}
+                  className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                />
+              ))}
+
+              <input
+                type="number"
+                value={formData.correct_answer}
+                onChange={(e) =>
+                  setFormData({ ...formData, correct_answer: +e.target.value })
+                }
+                placeholder="Correct answer index (0-based, e.g., 0 for first option)"
+                className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+              />
+
+              <select
+                value={formData.subjectId}
+                onChange={(e) =>
+                  setFormData({ ...formData, subjectId: +e.target.value })
+                }
+                className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 bg-white"
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                {loading ? "Saving..." : "Save"}
-              </button>
+                {subjects.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                type="number"
+                value={formData.score}
+                onChange={(e) =>
+                  setFormData({ ...formData, score: +e.target.value })
+                }
+                placeholder="Score for this question"
+                className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+              />
+
+              <div className="space-y-2">
+                <p className="text-gray-700 text-sm font-medium">
+                  Eligibility Flags:
+                </p>
+                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                  {[
+                    "weekly",
+                    "monthly",
+                    "mega",
+                    "special_event",
+                    "practice",
+                  ].map((flag) => (
+                    <label
+                      key={flag}
+                      className="inline-flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        value={flag}
+                        checked={formData.eligibility_flag.includes(flag)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData((prev) => ({
+                            ...prev,
+                            eligibility_flag: prev.eligibility_flag.includes(
+                              value
+                            )
+                              ? prev.eligibility_flag.filter((f) => f !== value)
+                              : [...prev.eligibility_flag, value],
+                          }));
+                        }}
+                        className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-gray-700 capitalize">
+                        {flag.replace("_", " ")}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setShowEditModal(false);
+                    resetForm();
+                  }}
+                  className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-150"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? "Saving..." : "Save Question"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Delete confirmation modal */}
-      {showDeleteModal && selectedQuestion && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded shadow max-w-md w-full space-y-4">
-            <p>
-              Are you sure you want to delete the question:{" "}
-              <strong>{selectedQuestion.question}</strong>?
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 border rounded"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={deleteQuestion}
-                className="px-4 py-2 bg-red-600 text-white rounded"
-              >
-                Delete
-              </button>
+        {/* Delete confirmation modal */}
+        {showDeleteModal && selectedQuestion && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+            <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-sm space-y-6 transform transition-all duration-300 scale-100 opacity-100">
+              <p className="text-gray-800 text-lg text-center">
+                Are you sure you want to delete the question:{" "}
+                <strong className="font-semibold text-red-600">
+                  "{selectedQuestion.question}"
+                </strong>
+                ?
+                <br />
+                <span className="text-sm text-gray-500 mt-2 block">
+                  This action cannot be undone.
+                </span>
+              </p>
+              <div className="flex justify-center gap-4">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-150"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={deleteQuestion}
+                  className="px-6 py-2 bg-red-600 text-white rounded-md font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={loading}
+                >
+                  {loading ? "Deleting..." : "Delete"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
