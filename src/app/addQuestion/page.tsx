@@ -430,7 +430,7 @@ const QuestionManagement = () => {
               <p className="text-gray-800 text-lg text-center">
                 Are you sure you want to delete the question:{" "}
                 <strong className="font-semibold text-red-600">
-                  <div>"{selectedQuestion.question}"</div>
+                  <div>&quot;{selectedQuestion.question}&quot;</div>
                 </strong>
                 ?
                 <br />
