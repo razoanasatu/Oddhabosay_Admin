@@ -224,8 +224,8 @@ const QuestionManagement = () => {
                     colSpan={4}
                     className="text-center py-10 text-gray-500 text-lg"
                   >
-                    No questions available. Click "Add New Question" to get
-                    started.
+                    No questions available. Click &quot;Add New Question&quot;
+                    to get started.
                   </td>
                 </tr>
               ) : (
