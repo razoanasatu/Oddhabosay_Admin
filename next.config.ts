@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["api.backend.construction.code-studio4.com"],
+    domains: ["api.backend.construction.code-studio4.com", "localhost"],
   },
   eslint: {
     ignoreDuringBuilds: true,
