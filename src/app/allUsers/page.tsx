@@ -40,6 +40,7 @@ export default function Dashboard() {
 
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [userResults, setUserResults] = useState<any | null>(null);
+  const [userStats, setUserStats] = useState<any | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [resultLoading, setResultLoading] = useState(false);
   const [resultError, setResultError] = useState<string | null>(null);
@@ -116,18 +117,27 @@ export default function Dashboard() {
     setResultLoading(true);
     setResultError(null);
     setUserResults(null);
+    setUserStats(null);
     setModalOpen(true);
+
     try {
-      const res = await fetch(
-        `${baseUrl}/api/users/${userId}/challenge-summary`,
-        {
+      const [resultsRes, statsRes] = await Promise.all([
+        fetch(`${baseUrl}/api/users/${userId}/challenge-summary`, {
           headers: { Accept: "application/json" },
-        }
-      );
-      if (!res.ok) throw new Error("Failed to fetch challenge results");
-      const data = await res.json();
-      console.log("User Results:", data);
-      setUserResults(data);
+        }),
+        fetch(`${baseUrl}/api/challenges/user-stats?userId=${userId}`, {
+          headers: { Accept: "application/json" },
+        }),
+      ]);
+
+      if (!resultsRes.ok) throw new Error("Failed to fetch challenge results");
+      if (!statsRes.ok) throw new Error("Failed to fetch user stats");
+
+      const resultsData = await resultsRes.json();
+      const statsData = await statsRes.json();
+
+      setUserResults(resultsData);
+      setUserStats(statsData);
     } catch (err: any) {
       setResultError(err.message || "Unexpected error");
     } finally {
@@ -295,59 +305,97 @@ export default function Dashboard() {
             ) : resultError ? (
               <p className="text-center text-red-500">{resultError}</p>
             ) : (
-              userResults && (
-                <div className="space-y-4">
-                  {[
-                    "weekly",
-                    "monthly",
-                    "mega",
-                    "special_event",
-                    "practice",
-                  ].map((key) => (
-                    <div key={key}>
-                      <h3 className="text-lg font-bold capitalize mb-2">
-                        {key.replace("_", " ")} Challenges
-                      </h3>
-                      {userResults[key]?.length > 0 ? (
-                        <div className="overflow-auto">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Challenge ID</TableHead>
-                                <TableHead>Score</TableHead>
-                                <TableHead>Correct</TableHead>
-                                <TableHead>Position</TableHead>
-                                <TableHead>Prize</TableHead>
-                                <TableHead>Date</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {userResults[key].map((item: any) => (
-                                <TableRow key={item.challenge_id}>
-                                  <TableCell>{item.challenge_id}</TableCell>
-                                  <TableCell>{item.score}</TableCell>
-                                  <TableCell>{item.correct_answers}</TableCell>
-                                  <TableCell>{item.position || "-"}</TableCell>
-                                  <TableCell>{item.prize_money}</TableCell>
-                                  <TableCell>
-                                    {new Date(
-                                      item.createdAt
-                                    ).toLocaleDateString()}
-                                  </TableCell>
+              <>
+                {userResults && (
+                  <div className="space-y-4">
+                    {[
+                      "weekly",
+                      "monthly",
+                      "mega",
+                      "special_event",
+                      "practice",
+                    ].map((key) => (
+                      <div key={key}>
+                        <h3 className="text-lg font-bold capitalize mb-2">
+                          {key.replace("_", " ")} Challenges
+                        </h3>
+                        {userResults[key]?.length > 0 ? (
+                          <div className="overflow-auto">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Challenge ID</TableHead>
+                                  <TableHead>Score</TableHead>
+                                  <TableHead>Correct</TableHead>
+                                  <TableHead>Position</TableHead>
+                                  <TableHead>Prize</TableHead>
+                                  <TableHead>Date</TableHead>
                                 </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-500">
-                          No {key} challenge data available.
-                        </p>
-                      )}
+                              </TableHeader>
+                              <TableBody>
+                                {userResults[key].map((item: any) => (
+                                  <TableRow key={item.challenge_id}>
+                                    <TableCell>{item.challenge_id}</TableCell>
+                                    <TableCell>{item.score}</TableCell>
+                                    <TableCell>
+                                      {item.correct_answers}
+                                    </TableCell>
+                                    <TableCell>
+                                      {item.position || "-"}
+                                    </TableCell>
+                                    <TableCell>{item.prize_money}</TableCell>
+                                    <TableCell>
+                                      {new Date(
+                                        item.createdAt
+                                      ).toLocaleDateString()}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            No {key} challenge data available.
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {userStats && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-bold mb-2">User Stats</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-800">
+                      <div>
+                        <h4 className="font-semibold mb-1">Practice Stats</h4>
+                        <ul className="list-disc list-inside">
+                          <li>Weekly: {userStats.practice_stats.weekly}</li>
+                          <li>Monthly: {userStats.practice_stats.monthly}</li>
+                          <li>Yearly: {userStats.practice_stats.yearly}</li>
+                          <li>
+                            Last 3 Months:{" "}
+                            {userStats.practice_stats.last_3_months}
+                          </li>
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="font-semibold mb-1">Exam Stats</h4>
+                        <ul className="list-disc list-inside">
+                          <li>
+                            Weekly: {userStats.exam_stats.weekly_exam_stats}
+                          </li>
+                          <li>
+                            Monthly: {userStats.exam_stats.monthly_exam_stats}
+                          </li>
+                          <li>Mega: {userStats.exam_stats.mega_exam_stats}</li>
+                        </ul>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
