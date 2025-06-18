@@ -8,7 +8,7 @@ type SpecialEvent = {
   id: string;
   title: string;
   content: string;
-  imageUrl: string;
+  image: string;
 };
 
 export default function SpecialEventManagement() {
@@ -177,7 +177,7 @@ export default function SpecialEventManagement() {
             className="bg-white shadow rounded-lg p-4 border border-gray-200"
           >
             <img
-              src={event.imageUrl}
+              src={event.image}
               alt={event.title}
               className="w-full h-40 object-cover rounded"
             />
