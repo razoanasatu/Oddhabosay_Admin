@@ -38,6 +38,12 @@ export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [userResults, setUserResults] = useState<any | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [resultLoading, setResultLoading] = useState(false);
+  const [resultError, setResultError] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
@@ -104,6 +110,29 @@ export default function Dashboard() {
   const handleRowsPerPageChange = (value: string) => {
     setRowsPerPage(parseInt(value, 10));
     setCurrentPage(1);
+  };
+
+  const fetchUserResults = async (userId: number) => {
+    setResultLoading(true);
+    setResultError(null);
+    setUserResults(null);
+    setModalOpen(true);
+    try {
+      const res = await fetch(
+        `${baseUrl}/api/users/${userId}/challenge-summary`,
+        {
+          headers: { Accept: "application/json" },
+        }
+      );
+      if (!res.ok) throw new Error("Failed to fetch challenge results");
+      const data = await res.json();
+      console.log("User Results:", data);
+      setUserResults(data);
+    } catch (err: any) {
+      setResultError(err.message || "Unexpected error");
+    } finally {
+      setResultLoading(false);
+    }
   };
 
   return (
@@ -200,6 +229,10 @@ export default function Dashboard() {
                       size="sm"
                       className="rounded-md border border-purple-500 text-purple-500 hover:bg-purple-100"
                       title="View"
+                      onClick={() => {
+                        setSelectedUserId(user.id);
+                        fetchUserResults(user.id);
+                      }}
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
@@ -241,6 +274,84 @@ export default function Dashboard() {
           Next <ChevronsRight className="w-4 h-4" />
         </Button>
       </div>
+
+      {/* Challenge Results Modal */}
+      {modalOpen && (
+        <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white w-full max-w-7xl p-6 rounded-lg overflow-y-auto max-h-[100vh] relative">
+            <button
+              className="absolute top-2 right-2 text-gray-600 hover:text-black"
+              onClick={() => setModalOpen(false)}
+            >
+              ✕
+            </button>
+
+            <h2 className="text-2xl font-semibold mb-4 text-center">
+              User Challenge Details
+            </h2>
+
+            {resultLoading ? (
+              <p className="text-center">Loading challenge details...</p>
+            ) : resultError ? (
+              <p className="text-center text-red-500">{resultError}</p>
+            ) : (
+              userResults && (
+                <div className="space-y-4">
+                  {[
+                    "weekly",
+                    "monthly",
+                    "mega",
+                    "special_event",
+                    "practice",
+                  ].map((key) => (
+                    <div key={key}>
+                      <h3 className="text-lg font-bold capitalize mb-2">
+                        {key.replace("_", " ")} Challenges
+                      </h3>
+                      {userResults[key]?.length > 0 ? (
+                        <div className="overflow-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Challenge ID</TableHead>
+                                <TableHead>Score</TableHead>
+                                <TableHead>Correct</TableHead>
+                                <TableHead>Position</TableHead>
+                                <TableHead>Prize</TableHead>
+                                <TableHead>Date</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {userResults[key].map((item: any) => (
+                                <TableRow key={item.challenge_id}>
+                                  <TableCell>{item.challenge_id}</TableCell>
+                                  <TableCell>{item.score}</TableCell>
+                                  <TableCell>{item.correct_answers}</TableCell>
+                                  <TableCell>{item.position || "-"}</TableCell>
+                                  <TableCell>{item.prize_money}</TableCell>
+                                  <TableCell>
+                                    {new Date(
+                                      item.createdAt
+                                    ).toLocaleDateString()}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">
+                          No {key} challenge data available.
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
