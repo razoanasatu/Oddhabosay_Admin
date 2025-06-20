@@ -146,9 +146,11 @@ const ChallengeRequirementManagement = () => {
         <table className="min-w-full">
           <thead className="bg-gray-100">
             <tr>
+              <th className="p-3 text-sm font-semibold text-left">Id</th>
               <th className="p-3 text-sm font-semibold text-left">
                 Practice Qs Solved
               </th>
+
               <th className="p-3 text-sm font-semibold text-left">Practice</th>
               <th className="p-3 text-sm font-semibold text-left">Weekly</th>
               <th className="p-3 text-sm font-semibold text-left">Monthly</th>
@@ -173,6 +175,7 @@ const ChallengeRequirementManagement = () => {
             ) : (
               requirements.map((r) => (
                 <tr key={r.id} className="border-t hover:bg-gray-50">
+                  <td className="p-3">{r.id}</td>
                   <td className="p-3">
                     {r.number_of_practice_questions_solved}
                   </td>

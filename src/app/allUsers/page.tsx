@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { baseUrl } from "@/utils/constant";
-import { ChevronsLeft, ChevronsRight, Eye, Search } from "lucide-react";
+import { Bell, ChevronsLeft, ChevronsRight, Eye, Search } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 interface ApiUser {
@@ -145,11 +145,48 @@ export default function Dashboard() {
     }
   };
 
+  const sendNotificationToUser = async (userId: number) => {
+    try {
+      const res = await fetch(`${baseUrl}/api/notifications`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userId, // User ID dynamically passed
+          message: "This is a test from Anik.", // Specific message payload
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to send notification");
+
+      alert("Notification sent to user.");
+    } catch (error) {
+      alert((error as Error).message || "An error occurred.");
+    }
+  };
+
+  const broadcastNotification = async () => {
+    try {
+      const res = await fetch(`${baseUrl}/api/notifications/broadcast`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: "📢 System push notification test for all user!", // Broadcast message payload
+        }),
+      });
+
+      if (!res.ok) throw new Error("Failed to broadcast notification");
+
+      alert("Broadcast notification sent.");
+    } catch (error) {
+      alert((error as Error).message || "An error occurred.");
+    }
+  };
+
   return (
     <div className="p-6 w-full min-h-screen bg-gray-50">
       <h1 className="text-3xl font-bold mb-6 text-black">User Dashboard</h1>
 
-      {/* Search and Row Count */}
+      {/* Search, Rows & Broadcast */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
         <div className="flex items-center border rounded px-2 bg-white w-full sm:w-96">
           <Search className="w-5 h-5 text-gray-400 mr-2" />
@@ -161,21 +198,30 @@ export default function Dashboard() {
           />
         </div>
 
-        <Select
-          onValueChange={handleRowsPerPageChange}
-          defaultValue={rowsPerPage.toString()}
-        >
-          <SelectTrigger className="w-28">
-            <SelectValue placeholder="Rows" />
-          </SelectTrigger>
-          <SelectContent>
-            {[5, 10, 20, 50].map((num) => (
-              <SelectItem key={num} value={num.toString()}>
-                {num} rows
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2 items-center">
+          <Select
+            onValueChange={handleRowsPerPageChange}
+            defaultValue={rowsPerPage.toString()}
+          >
+            <SelectTrigger className="w-28">
+              <SelectValue placeholder="Rows" />
+            </SelectTrigger>
+            <SelectContent>
+              {[5, 10, 20, 50].map((num) => (
+                <SelectItem key={num} value={num.toString()}>
+                  {num} rows
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Button
+            onClick={broadcastNotification}
+            className="bg-blue-600 text-white hover:bg-blue-700"
+          >
+            📢 Broadcast
+          </Button>
+        </div>
       </div>
 
       {/* Table */}
@@ -234,18 +280,30 @@ export default function Dashboard() {
                   <TableCell>{user.address}</TableCell>
                   <TableCell>{user.phone_no}</TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="rounded-md border border-purple-500 text-purple-500 hover:bg-purple-100"
-                      title="View"
-                      onClick={() => {
-                        setSelectedUserId(user.id);
-                        fetchUserResults(user.id);
-                      }}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="rounded-md border border-purple-500 text-purple-500 hover:bg-purple-100"
+                        title="View"
+                        onClick={() => {
+                          setSelectedUserId(user.id);
+                          fetchUserResults(user.id);
+                        }}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="rounded-md border border-blue-500 text-blue-500 hover:bg-blue-100"
+                        title="Send Notification"
+                        onClick={() => sendNotificationToUser(user.id)}
+                      >
+                        <Bell className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

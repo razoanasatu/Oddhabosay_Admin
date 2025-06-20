@@ -1,7 +1,8 @@
 "use client";
 import QuestionSelector from "@/app/questionSelection/page";
 import { baseUrl } from "@/utils/constant";
-import { Edit, Plus, Trash2, X } from "lucide-react";
+import { Edit, Eye, Plus, Trash2, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 //import QuestionSelector from "../questionSelection/QuestionSelector";
 // Define Challenge types based on your API response
@@ -203,6 +204,7 @@ const ChallengeManagement = () => {
   // If not, you can remove `setQuestions` and related `fetchQuestions` call from useEffect.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [questions, setQuestions] = useState<Question[]>([]); // Still needed if you fetch all questions, otherwise can be removed.
+  const router = useRouter();
 
   const [prizeDetailsOptions, setPrizeDetailsOptions] = useState<
     PrizeDetails[]
@@ -979,6 +981,17 @@ const ChallengeManagement = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() =>
+                            router.push(
+                              `http://localhost:3000/challengeResult/${challenge.id}`
+                            )
+                          }
+                          className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-100 transition-colors"
+                          title="View Challenge Result"
+                        >
+                          <Eye size={16} />
+                        </button>
                         <button
                           onClick={() => handleEdit(challenge)}
                           className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
