@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 //import QuestionSelector from "../questionSelection/QuestionSelector";
 // Define Challenge types based on your API response
-type PrizePosition = {
+export type PrizePosition = {
   position: string;
   prize_money: number;
   user_number: number;
@@ -14,8 +14,7 @@ type PrizePosition = {
 };
 
 export type PrizeDetails = {
-  // Exported for use in Challenge type
-  prize_positions: PrizePosition[];
+  prize_structure: Record<string, PrizePosition[]>;
   global_board: boolean;
   id: number;
   monthly_eligibility: number;
@@ -942,6 +941,7 @@ const ChallengeManagement = () => {
                   </td>
                 </tr>
               ) : (
+                challenges &&
                 challenges.map((challenge: Challenge) => (
                   <tr key={challenge.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -1232,21 +1232,22 @@ const ChallengeManagement = () => {
                   {/* Display selected questions as tags */}
                   {selectedQuestionsDetails.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-2">
-                      {selectedQuestionsDetails.map((q) => (
-                        <span
-                          key={q.id}
-                          className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
-                        >
-                          {q.question.substring(0, 30)}...
-                          <button
-                            type="button"
-                            className="text-blue-600 hover:text-blue-800 ml-1"
-                            onClick={() => handleRemoveSelectedQuestion(q.id)}
+                      {selectedQuestionsDetails &&
+                        selectedQuestionsDetails.map((q) => (
+                          <span
+                            key={q.id}
+                            className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
                           >
-                            ×
-                          </button>
-                        </span>
-                      ))}
+                            {q.question.substring(0, 30)}...
+                            <button
+                              type="button"
+                              className="text-blue-600 hover:text-blue-800 ml-1"
+                              onClick={() => handleRemoveSelectedQuestion(q.id)}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
                     </div>
                   )}
 
@@ -1304,16 +1305,18 @@ const ChallengeManagement = () => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">Select Prize Details</option>
-                    {prizeDetailsOptions.length > 0 ? (
-                      prizeDetailsOptions.map((pd) => (
-                        <option key={pd.id} value={pd.id}>
-                          ID: {pd.id} -{" "}
-                          {pd.prize_positions.map((p) => p.position).join(", ")}
-                        </option>
-                      ))
-                    ) : (
-                      <option disabled>No prize details available</option>
-                    )}
+                    {prizeDetailsOptions.length > 0
+                      ? prizeDetailsOptions.map((pd) => (
+                          <option key={pd.id} value={pd.id}>
+                            ID: {pd.id} -{" "}
+                            {Object.values(pd.prize_structure)
+                              .flat()
+                              .map((p) => p.position)
+                              .join(", ")}
+                          </option>
+                        ))
+                      : null}
+                    : (<option disabled>No prize details available</option>)
                   </select>
                 </div>
 
@@ -1334,6 +1337,7 @@ const ChallengeManagement = () => {
                   >
                     <option value="">Select Requirement</option>
                     {challengeRequirements.length > 0 ? (
+                      challengeRequirements &&
                       challengeRequirements.map((cr) => (
                         <option key={cr.id} value={cr.id}>
                           ID: {cr.id} - Practice Challenges:{" "}
@@ -1362,6 +1366,7 @@ const ChallengeManagement = () => {
                   >
                     <option value="">Select Rule</option>
                     {rules.length > 0 ? (
+                      rules &&
                       rules.map((r) => (
                         <option key={r.id} value={r.id}>
                           ID: {r.id} - {r.title} ({r.challenge_type})
@@ -1395,6 +1400,7 @@ const ChallengeManagement = () => {
                       >
                         <option value="">Select Event</option>
                         {events.length > 0 ? (
+                          events &&
                           events.map((event) => (
                             <option key={event.id} value={event.id}>
                               ID: {event.id} - {event.title}
@@ -1629,21 +1635,22 @@ const ChallengeManagement = () => {
                   {/* Display selected questions as tags */}
                   {selectedQuestionsDetails.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-2">
-                      {selectedQuestionsDetails.map((q) => (
-                        <span
-                          key={q.id}
-                          className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
-                        >
-                          {q.question.substring(0, 30)}...
-                          <button
-                            type="button"
-                            className="text-blue-600 hover:text-blue-800 ml-1"
-                            onClick={() => handleRemoveSelectedQuestion(q.id)}
+                      {selectedQuestionsDetails &&
+                        selectedQuestionsDetails.map((q) => (
+                          <span
+                            key={q.id}
+                            className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
                           >
-                            ×
-                          </button>
-                        </span>
-                      ))}
+                            {q.question.substring(0, 30)}...
+                            <button
+                              type="button"
+                              className="text-blue-600 hover:text-blue-800 ml-1"
+                              onClick={() => handleRemoveSelectedQuestion(q.id)}
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
                     </div>
                   )}
 
@@ -1706,7 +1713,10 @@ const ChallengeManagement = () => {
                       prizeDetailsOptions.map((pd) => (
                         <option key={pd.id} value={pd.id}>
                           ID: {pd.id} -{" "}
-                          {pd.prize_positions.map((p) => p.position).join(", ")}
+                          {Object.values(pd.prize_structure)
+                            .flat()
+                            .map((p) => p.position)
+                            .join(", ")}
                         </option>
                       ))
                     ) : (
@@ -1732,6 +1742,7 @@ const ChallengeManagement = () => {
                   >
                     <option value="">Select Requirement</option>
                     {challengeRequirements.length > 0 ? (
+                      challengeRequirements &&
                       challengeRequirements.map((cr) => (
                         <option key={cr.id} value={cr.id}>
                           ID: {cr.id} - Practice Challenges:{" "}
@@ -1760,6 +1771,7 @@ const ChallengeManagement = () => {
                   >
                     <option value="">Select Rule</option>
                     {rules.length > 0 ? (
+                      rules &&
                       rules.map((r) => (
                         <option key={r.id} value={r.id}>
                           ID: {r.id} - {r.title} ({r.challenge_type})
@@ -1793,6 +1805,7 @@ const ChallengeManagement = () => {
                       >
                         <option value="">Select Event</option>
                         {events.length > 0 ? (
+                          events &&
                           events.map((event) => (
                             <option key={event.id} value={event.id}>
                               ID: {event.id} - {event.title}

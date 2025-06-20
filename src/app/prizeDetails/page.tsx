@@ -5,6 +5,7 @@ import { Edit, Plus, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface PrizePosition {
+  threshold?: number; // Now a number
   position: string;
   prize_money: number;
   user_number: number;
@@ -12,8 +13,9 @@ interface PrizePosition {
 }
 
 interface PrizeDetails {
-  id: string;
-  prize_positions: PrizePosition[];
+  id: string | number;
+  prize_structure: Record<string, PrizePosition[]>;
+  prize_positions?: PrizePosition[]; // Flattened for UI use
   global_board: boolean;
   monthly_eligibility: number;
   weekly_eligibility: number;
@@ -24,29 +26,42 @@ export default function PrizeDetailsManagement() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // For modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-
   const [selectedPrizeDetails, setSelectedPrizeDetails] =
     useState<PrizeDetails | null>(null);
 
-  // Form state (shared by create and edit)
   const [prizePositions, setPrizePositions] = useState<PrizePosition[]>([
-    { position: "", prize_money: 0, user_number: 0, limit: 0 },
+    { threshold: 0, position: "", prize_money: 0, user_number: 0, limit: 0 },
   ]);
   const [globalBoard, setGlobalBoard] = useState(false);
   const [monthlyEligibility, setMonthlyEligibility] = useState(0);
   const [weeklyEligibility, setWeeklyEligibility] = useState(0);
 
-  // Fetch prize details list from API
   const fetchPrizeDetails = async () => {
     try {
       const res = await fetch(`${baseUrl}/api/prize-details`);
       const data = await res.json();
-      if (res.ok) setPrizeDetailsList(data.data || []);
-      else setError("Failed to load prize details.");
+      if (res.ok) {
+        const transformed = data.data.map((item: any) => {
+          const prize_positions: PrizePosition[] = [];
+          for (const [threshold, positions] of Object.entries(
+            item.prize_structure || {}
+          )) {
+            (positions as PrizePosition[]).forEach((pos) =>
+              prize_positions.push({
+                ...pos,
+                threshold: Number(threshold),
+              })
+            );
+          }
+          return { ...item, prize_positions };
+        });
+        setPrizeDetailsList(transformed);
+      } else {
+        setError("Failed to load prize details.");
+      }
     } catch {
       setError("Error fetching prize details.");
     }
@@ -56,10 +71,9 @@ export default function PrizeDetailsManagement() {
     fetchPrizeDetails();
   }, []);
 
-  // Reset form fields
   const resetForm = () => {
     setPrizePositions([
-      { position: "", prize_money: 0, user_number: 0, limit: 0 },
+      { threshold: 0, position: "", prize_money: 0, user_number: 0, limit: 0 },
     ]);
     setGlobalBoard(false);
     setMonthlyEligibility(0);
@@ -67,17 +81,15 @@ export default function PrizeDetailsManagement() {
     setError("");
   };
 
-  // Open create modal and reset form
   const openCreateModal = () => {
     resetForm();
     setSelectedPrizeDetails(null);
     setShowCreateModal(true);
   };
 
-  // Open edit modal and populate form
   const openEditModal = (details: PrizeDetails) => {
     setSelectedPrizeDetails(details);
-    setPrizePositions(details.prize_positions);
+    setPrizePositions(details.prize_positions || []);
     setGlobalBoard(details.global_board);
     setMonthlyEligibility(details.monthly_eligibility);
     setWeeklyEligibility(details.weekly_eligibility);
@@ -85,13 +97,11 @@ export default function PrizeDetailsManagement() {
     setError("");
   };
 
-  // Open delete confirmation modal
   const openDeleteModal = (details: PrizeDetails) => {
     setSelectedPrizeDetails(details);
     setShowDeleteModal(true);
   };
 
-  // Handle prize position changes
   const handlePrizeChange = (
     index: number,
     field: keyof PrizePosition,
@@ -105,32 +115,54 @@ export default function PrizeDetailsManagement() {
     setPrizePositions(updated);
   };
 
-  // Add new prize position row
   const addPrizeRow = () => {
     setPrizePositions([
       ...prizePositions,
-      { position: "", prize_money: 0, user_number: 0, limit: 0 },
+      { threshold: 0, position: "", prize_money: 0, user_number: 0, limit: 0 },
     ]);
   };
 
-  // Remove prize position row
   const removePrizeRow = (index: number) => {
     const updated = prizePositions.filter((_, i) => i !== index);
     setPrizePositions(
       updated.length
         ? updated
-        : [{ position: "", prize_money: 0, user_number: 0, limit: 0 }]
+        : [
+            {
+              threshold: 0,
+              position: "",
+              prize_money: 0,
+              user_number: 0,
+              limit: 0,
+            },
+          ]
     );
   };
+  const [thresholdGroups, setThresholdGroups] = useState([
+    {
+      threshold: 1, // Threshold value for this group
+      prizes: [{ position: "", prize_money: "", user_number: "", limit: "" }],
+    },
+  ]);
 
-  // Create new prize details
+  const buildPrizeStructure = () => {
+    const structure: Record<string, PrizePosition[]> = {};
+    for (const pos of prizePositions) {
+      const key = pos.threshold?.toString();
+      if (!key) continue;
+      if (!structure[key]) structure[key] = [];
+      const { threshold, ...rest } = pos;
+      structure[key].push(rest);
+    }
+    return structure;
+  };
+
   const handleCreate = async () => {
     if (!validateForm()) return;
-
     setLoading(true);
     try {
       const payload = {
-        prize_positions: prizePositions,
+        prize_structure: buildPrizeStructure(),
         global_board: globalBoard,
         monthly_eligibility: monthlyEligibility,
         weekly_eligibility: weeklyEligibility,
@@ -156,15 +188,12 @@ export default function PrizeDetailsManagement() {
     }
   };
 
-  // Update existing prize details
   const handleUpdate = async () => {
-    if (!selectedPrizeDetails) return;
-    if (!validateForm()) return;
-
+    if (!selectedPrizeDetails || !validateForm()) return;
     setLoading(true);
     try {
       const payload = {
-        prize_positions: prizePositions,
+        prize_structure: buildPrizeStructure(),
         global_board: globalBoard,
         monthly_eligibility: monthlyEligibility,
         weekly_eligibility: weeklyEligibility,
@@ -181,7 +210,6 @@ export default function PrizeDetailsManagement() {
 
       if (res.ok) {
         setShowEditModal(false);
-        setSelectedPrizeDetails(null);
         resetForm();
         fetchPrizeDetails();
       } else {
@@ -194,22 +222,16 @@ export default function PrizeDetailsManagement() {
     }
   };
 
-  // Delete prize details
   const handleDelete = async () => {
     if (!selectedPrizeDetails) return;
-
     setLoading(true);
     try {
       const res = await fetch(
         `${baseUrl}/api/prize-details/${selectedPrizeDetails.id}`,
-        {
-          method: "DELETE",
-        }
+        { method: "DELETE" }
       );
-
       if (res.ok) {
         setShowDeleteModal(false);
-        setSelectedPrizeDetails(null);
         fetchPrizeDetails();
       } else {
         setError("Failed to delete prize details.");
@@ -221,15 +243,20 @@ export default function PrizeDetailsManagement() {
     }
   };
 
-  // Simple validation
   const validateForm = () => {
     if (prizePositions.length === 0) {
       setError("Add at least one prize position.");
       return false;
     }
     for (const p of prizePositions) {
-      if (!p.position.trim()) {
-        setError("Position cannot be empty.");
+      if (
+        typeof p.threshold !== "number" ||
+        p.threshold <= 0 ||
+        !p.position.trim()
+      ) {
+        setError(
+          "Threshold must be a number > 0 and position must not be empty."
+        );
         return false;
       }
       if (p.prize_money <= 0 || p.user_number <= 0 || p.limit <= 0) {
@@ -268,50 +295,51 @@ export default function PrizeDetailsManagement() {
             </tr>
           </thead>
           <tbody>
-            {prizeDetailsList.length === 0 && (
+            {prizeDetailsList.length === 0 ? (
               <tr>
                 <td colSpan={5} className="text-center py-6 text-gray-500">
                   No prize details found.
                 </td>
               </tr>
+            ) : (
+              prizeDetailsList.map((details) => (
+                <tr key={details.id} className="border-t">
+                  <td className="border px-3 py-2">
+                    {details.prize_positions?.map((p, i) => (
+                      <div key={i}>
+                        Threshold {p.threshold}: {p.position} (৳{p.prize_money}{" "}
+                        | Users: {p.user_number} | Limit: {p.limit})
+                      </div>
+                    ))}
+                  </td>
+                  <td className="border px-3 py-2 text-center">
+                    {details.global_board ? "Yes" : "No"}
+                  </td>
+                  <td className="border px-3 py-2 text-center">
+                    {details.monthly_eligibility}
+                  </td>
+                  <td className="border px-3 py-2 text-center">
+                    {details.weekly_eligibility}
+                  </td>
+                  <td className="border px-3 py-2 text-center flex justify-center gap-3">
+                    <button
+                      onClick={() => openEditModal(details)}
+                      className="text-blue-600 hover:text-blue-800"
+                      title="Edit"
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
+                      onClick={() => openDeleteModal(details)}
+                      className="text-red-600 hover:text-red-800"
+                      title="Delete"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                </tr>
+              ))
             )}
-            {prizeDetailsList.map((details) => (
-              <tr key={details.id} className="border-t">
-                <td className="border px-3 py-2">
-                  {details.prize_positions.map((p, i) => (
-                    <div key={i}>
-                      {p.position} (৳{p.prize_money} | Users: {p.user_number} |
-                      Limit: {p.limit})
-                    </div>
-                  ))}
-                </td>
-                <td className="border px-3 py-2 text-center">
-                  {details.global_board ? "Yes" : "No"}
-                </td>
-                <td className="border px-3 py-2 text-center">
-                  {details.monthly_eligibility}
-                </td>
-                <td className="border px-3 py-2 text-center">
-                  {details.weekly_eligibility}
-                </td>
-                <td className="border px-3 py-2 text-center flex justify-center gap-3">
-                  <button
-                    onClick={() => openEditModal(details)}
-                    className="text-blue-600 hover:text-blue-800"
-                    title="Edit"
-                  >
-                    <Edit size={18} />
-                  </button>
-                  <button
-                    onClick={() => openDeleteModal(details)}
-                    className="text-red-600 hover:text-red-800"
-                    title="Delete"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </td>
-              </tr>
-            ))}
           </tbody>
         </table>
       </div>
@@ -336,11 +364,11 @@ export default function PrizeDetailsManagement() {
               </button>
             </div>
 
-            {/* Prize Positions Table (editable) */}
             <div className="overflow-x-auto max-h-60 mb-4">
               <table className="w-full border text-sm">
                 <thead className="bg-gray-100 sticky top-0">
                   <tr>
+                    <th className="border px-3 py-2">Threshold (User Count)</th>
                     <th className="border px-3 py-2">Position</th>
                     <th className="border px-3 py-2">Prize Money</th>
                     <th className="border px-3 py-2">User Number</th>
@@ -351,6 +379,22 @@ export default function PrizeDetailsManagement() {
                 <tbody>
                   {prizePositions.map((prize, index) => (
                     <tr key={index}>
+                      <td className="border px-2 py-1">
+                        <input
+                          type="number"
+                          value={prize.threshold ?? ""}
+                          onChange={(e) =>
+                            handlePrizeChange(
+                              index,
+                              "threshold",
+                              e.target.value
+                            )
+                          }
+                          className="w-full border p-1 rounded"
+                          min={1}
+                          required
+                        />
+                      </td>
                       <td className="border px-2 py-1">
                         <input
                           type="text"
@@ -374,8 +418,8 @@ export default function PrizeDetailsManagement() {
                             )
                           }
                           className="w-full border p-1 rounded"
+                          min={1}
                           required
-                          min={0}
                         />
                       </td>
                       <td className="border px-2 py-1">
@@ -390,8 +434,8 @@ export default function PrizeDetailsManagement() {
                             )
                           }
                           className="w-full border p-1 rounded"
+                          min={1}
                           required
-                          min={0}
                         />
                       </td>
                       <td className="border px-2 py-1">
@@ -402,13 +446,12 @@ export default function PrizeDetailsManagement() {
                             handlePrizeChange(index, "limit", e.target.value)
                           }
                           className="w-full border p-1 rounded"
+                          min={1}
                           required
-                          min={0}
                         />
                       </td>
                       <td className="border px-2 py-1 text-center">
                         <button
-                          type="button"
                           onClick={() => removePrizeRow(index)}
                           className="text-red-500 hover:underline"
                           disabled={prizePositions.length === 1}
@@ -421,7 +464,6 @@ export default function PrizeDetailsManagement() {
                 </tbody>
               </table>
               <button
-                type="button"
                 onClick={addPrizeRow}
                 className="mt-3 px-4 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
               >
@@ -429,7 +471,6 @@ export default function PrizeDetailsManagement() {
               </button>
             </div>
 
-            {/* Other fields */}
             <div className="flex flex-col gap-4 md:flex-row md:items-center mb-6">
               <label className="flex items-center gap-2">
                 <input
@@ -441,7 +482,7 @@ export default function PrizeDetailsManagement() {
               </label>
 
               <label>
-                Monthly Eligibility:{" "}
+                Monthly Eligibility:
                 <input
                   type="number"
                   value={monthlyEligibility}
@@ -454,7 +495,7 @@ export default function PrizeDetailsManagement() {
               </label>
 
               <label>
-                Weekly Eligibility:{" "}
+                Weekly Eligibility:
                 <input
                   type="number"
                   value={weeklyEligibility}
@@ -494,22 +535,15 @@ export default function PrizeDetailsManagement() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal */}
       {showDeleteModal && selectedPrizeDetails && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded shadow p-6 max-w-sm w-full text-center">
             <h2 className="text-xl font-bold mb-4">Confirm Delete</h2>
             <p className="mb-6">
-              Are you sure you want to delete the prize details for{" "}
-              <strong>
-                {selectedPrizeDetails.prize_positions
-                  .map((p) => p.position)
-                  .join(", ")}
-              </strong>
-              ?
+              Are you sure you want to delete this prize detail?
             </p>
             {error && <div className="text-red-600 mb-4">{error}</div>}
-
             <div className="flex justify-center gap-4">
               <button
                 onClick={() => {
