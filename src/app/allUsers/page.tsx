@@ -217,7 +217,7 @@ export default function Dashboard() {
 
           <Button
             onClick={broadcastNotification}
-            className="bg-blue-600 text-white hover:bg-blue-700"
+            className="bg-purple-600 text-white hover:bg-purple-700"
           >
             📢 Broadcast
           </Button>
@@ -297,7 +297,7 @@ export default function Dashboard() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="rounded-md border border-blue-500 text-blue-500 hover:bg-blue-100"
+                        className="rounded-md border border-purple-500 text-purple-500 hover:bg-purple-100"
                         title="Send Notification"
                         onClick={() => sendNotificationToUser(user.id)}
                       >
