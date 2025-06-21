@@ -74,14 +74,14 @@ const WinLaptopDetails: React.FC = () => {
               value={form[name]}
               onChange={handleChange}
               placeholder={`Enter ${label}`}
-              className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
         ))}
 
         <button
           type="submit"
-          className="w-full py-3 px-6 mt-4 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all text-lg font-medium"
+          className="w-full py-3 px-6 mt-4 bg-gradient-to-r from-purple-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all text-lg font-medium"
         >
           Save Laptop Details
         </button>
