@@ -110,7 +110,7 @@ const EligibilityDetails: React.FC = () => {
         <div className="md:col-span-2 mt-4">
           <button
             type="submit"
-            className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all text-lg font-medium"
+            className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-purple-500 text-white rounded-lg hover:from-blue-700 hover:to-purple-600 transition-all text-lg font-medium"
           >
             Save Eligibility
           </button>

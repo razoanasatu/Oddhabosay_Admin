@@ -81,7 +81,7 @@ const WinLaptopDetails: React.FC = () => {
 
         <button
           type="submit"
-          className="w-full py-3 px-6 mt-4 bg-gradient-to-r from-purple-600 to-blue-500 text-white rounded-lg hover:from-blue-700 hover:to-blue-600 transition-all text-lg font-medium"
+          className="w-full py-3 px-6 mt-4 bg-gradient-to-r from-purple-600 to-purple-500 text-white rounded-lg hover:from-purple-700 hover:to-blue-600 transition-all text-lg font-medium"
         >
           Save Laptop Details
         </button>

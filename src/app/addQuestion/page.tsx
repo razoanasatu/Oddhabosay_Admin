@@ -176,7 +176,7 @@ const QuestionManagement = () => {
               resetForm();
               setShowCreateModal(true);
             }}
-            className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 ease-in-out shadow-md"
+            className="flex items-center gap-2 px-5 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 ease-in-out shadow-md"
           >
             <Plus size={18} /> Add New Question
           </button>
@@ -285,8 +285,8 @@ const QuestionManagement = () => {
 
         {/* Create/Edit Modal */}
         {(showCreateModal || showEditModal) && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-sm p-4">
-            <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg space-y-5 transform transition-all duration-300 scale-100 opacity-100">
+          <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg space-y-5 transform transition-all duration-300 scale-100 opacity-100 max-h-[90vh] overflow-y-auto">
               <div className="flex justify-between items-center border-b pb-3 mb-4">
                 <h2 className="text-2xl font-semibold text-gray-800">
                   {showEditModal ? "Edit Question" : "Create New Question"}
