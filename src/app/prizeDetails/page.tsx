@@ -282,61 +282,99 @@ export default function PrizeDetailsManagement() {
       </div>
 
       {error && <div className="text-red-600 mb-4">{error}</div>}
-
-      <div className="overflow-x-auto">
-        <table className="w-full border text-sm bg-white rounded shadow">
-          <thead className="bg-gray-100">
+      <div className="overflow-x-auto rounded-lg shadow-lg">
+        <table className="min-w-full leading-normal bg-white">
+          <thead className="bg-gradient-to-r from-purple-600 to-blue-800">
             <tr>
-              <th className="border px-3 py-2">Positions</th>
-              <th className="border px-3 py-2">Global Board</th>
-              <th className="border px-3 py-2">Monthly Eligibility</th>
-              <th className="border px-3 py-2">Weekly Eligibility</th>
-              <th className="border px-3 py-2">Actions</th>
+              <th className="px-6 py-5 text-left text-xs font-semibold text-white uppercase tracking-wider border-r border-blue-700">
+                Position & Prize Breakdown
+              </th>
+              <th className="px-6 py-5 text-center text-xs font-semibold text-white uppercase tracking-wider border-r border-blue-700">
+                Global Board
+              </th>
+              <th className="px-6 py-5 text-center text-xs font-semibold text-white uppercase tracking-wider border-r border-blue-700">
+                Monthly Eligibility
+              </th>
+              <th className="px-6 py-5 text-center text-xs font-semibold text-white uppercase tracking-wider border-r border-blue-700">
+                Weekly Eligibility
+              </th>
+              <th className="px-6 py-5 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
             {prizeDetailsList.length === 0 ? (
               <tr>
-                <td colSpan={5} className="text-center py-6 text-gray-500">
-                  No prize details found.
+                <td
+                  colSpan={5}
+                  className="text-center py-10 text-gray-500 text-lg italic"
+                >
+                  No prize details found. Please add new entries.
                 </td>
               </tr>
             ) : (
               prizeDetailsList.map((details) => (
-                <tr key={details.id} className="border-t">
-                  <td className="border px-3 py-2">
+                <tr
+                  key={details.id}
+                  className="border-b border-gray-200 hover:bg-purple-50 transition-colors duration-200 ease-in-out"
+                >
+                  <td className="px-6 py-4 border-r border-gray-200">
                     {details.prize_positions?.map((p, i) => (
-                      <div key={i}>
-                        Registerd User {p.threshold}: {p.position} (৳
-                        {p.prize_money} | Users: {p.user_number} | Limit:{" "}
-                        {p.limit})
+                      <div
+                        key={i}
+                        className="mb-3 last:mb-0 p-3 bg-gray-50 rounded-md border border-gray-200"
+                      >
+                        <p className="text-gray-900 font-semibold mb-1">
+                          Registered User{" "}
+                          <span className="text-purple-700">{p.threshold}</span>
+                          :{" "}
+                          <span className="text-purple-900">{p.position}</span>
+                        </p>
+                        <p className="text-gray-700 text-sm">
+                          Prize Money:{" "}
+                          <span className="font-medium">৳{p.prize_money}</span>{" "}
+                          | Target Users:{" "}
+                          <span className="font-medium">{p.user_number}</span> |
+                          Limit: <span className="font-medium">{p.limit}</span>
+                        </p>
                       </div>
                     ))}
                   </td>
-                  <td className="border px-3 py-2 text-center">
-                    {details.global_board ? "Yes" : "No"}
+                  <td className="px-6 py-4 text-center border-r border-gray-200">
+                    <span
+                      className={`inline-flex items-center px-4 py-1.5 rounded-xl text-xs font-semibold ${
+                        details.global_board
+                          ? "bg-purple-100 text-purple-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {details.global_board ? "Yes" : "No"}
+                    </span>
                   </td>
-                  <td className="border px-3 py-2 text-center">
+                  <td className="px-6 py-4 text-center text-gray-800 font-medium border-r border-gray-200">
                     {details.monthly_eligibility}
                   </td>
-                  <td className="border px-3 py-2 text-center">
+                  <td className="px-6 py-4 text-center text-gray-800 font-medium border-r border-gray-200">
                     {details.weekly_eligibility}
                   </td>
-                  <td className="border px-3 py-2 text-center flex justify-center gap-3">
-                    <button
-                      onClick={() => openEditModal(details)}
-                      className="text-blue-600 hover:text-blue-800"
-                      title="Edit"
-                    >
-                      <Edit size={18} />
-                    </button>
-                    <button
-                      onClick={() => openDeleteModal(details)}
-                      className="text-red-600 hover:text-red-800"
-                      title="Delete"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex justify-center items-center space-x-4">
+                      <button
+                        onClick={() => openEditModal(details)}
+                        className="text-blue-600 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 ease-in-out p-1 rounded-full"
+                        title="Edit Prize Details"
+                      >
+                        <Edit size={20} />
+                      </button>
+                      <button
+                        onClick={() => openDeleteModal(details)}
+                        className="text-red-600 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition duration-150 ease-in-out p-1 rounded-full"
+                        title="Delete Prize Details"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -344,7 +382,6 @@ export default function PrizeDetailsManagement() {
           </tbody>
         </table>
       </div>
-
       {/* Create/Edit Modal */}
       {(showCreateModal || showEditModal) && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -369,7 +406,7 @@ export default function PrizeDetailsManagement() {
               <table className="w-full border text-sm">
                 <thead className="bg-gray-100 sticky top-0">
                   <tr>
-                    <th className="border px-3 py-2">Threshold (User Count)</th>
+                    <th className="border px-3 py-2">Registered User</th>
                     <th className="border px-3 py-2">Position</th>
                     <th className="border px-3 py-2">Prize Money</th>
                     <th className="border px-3 py-2">User Number</th>
