@@ -307,8 +307,9 @@ export default function PrizeDetailsManagement() {
                   <td className="border px-3 py-2">
                     {details.prize_positions?.map((p, i) => (
                       <div key={i}>
-                        Threshold {p.threshold}: {p.position} (৳{p.prize_money}{" "}
-                        | Users: {p.user_number} | Limit: {p.limit})
+                        Registerd User {p.threshold}: {p.position} (৳
+                        {p.prize_money} | Users: {p.user_number} | Limit:{" "}
+                        {p.limit})
                       </div>
                     ))}
                   </td>

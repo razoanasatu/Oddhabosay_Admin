@@ -33,29 +33,54 @@ type User = {
   numericRank: number;
 };
 
+type SortingItem = {
+  id: number;
+  image: string;
+  position: number;
+};
+
+type Sorting = {
+  byTotalPoints: SortingItem[];
+  byMonthlySubmitTime: SortingItem[];
+  byWeeklySubmitTime: SortingItem[];
+  byPracticePassed: SortingItem[];
+  byPreviousRank: SortingItem[];
+};
+
 export default function Globalboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [resultFinalized, setResultFinalized] = useState(false);
 
+  const [monthlyEligibility, setMonthlyEligibility] = useState(0);
+  const [weeklyEligibility, setWeeklyEligibility] = useState(0);
+  const [sorting, setSorting] = useState<Sorting | null>(null);
+
   const [showFilterInputs, setShowFilterInputs] = useState(false);
   const [inputMonth, setInputMonth] = useState<number | "">("");
   const [inputYear, setInputYear] = useState<number | "">("");
 
-  const rowsPerPage = 10;
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
+  const rowsPerPage = 10;
   const totalPages = Math.ceil(users.length / rowsPerPage);
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
   const currentRows = users.slice(indexOfFirstRow, indexOfLastRow);
 
-  // Fetch current global board
+  useEffect(() => {
+    fetchCurrentBoard();
+  }, []);
+
   const fetchCurrentBoard = () => {
     fetch(API_URL)
       .then((res) => res.json())
       .then((data) => {
         if (data.success && data.data?.users) {
           setUsers(data.data.users);
+          setMonthlyEligibility(data.data.monthly_eligibility || 0);
+          setWeeklyEligibility(data.data.weekly_eligibility || 0);
+          setSorting(data.data.sorting || null);
           setResultFinalized(data.result_finalization === true);
           setCurrentPage(1);
         }
@@ -63,11 +88,6 @@ export default function Globalboard() {
       .catch((err) => console.error("Error fetching leaderboard:", err));
   };
 
-  useEffect(() => {
-    fetchCurrentBoard();
-  }, []);
-
-  // Admin reset button handler
   const handleResetBoard = async () => {
     if (
       !window.confirm(
@@ -98,7 +118,6 @@ export default function Globalboard() {
     }
   };
 
-  // Pagination
   const handlePageChange = (page: number) => {
     if (page > 0 && page <= totalPages) {
       setCurrentPage(page);
@@ -112,7 +131,6 @@ export default function Globalboard() {
         <h1 className="text-black text-xl font-bold">GlobalBoard</h1>
 
         <div className="flex items-center gap-4 flex-wrap">
-          {/* Admin Reset Button */}
           <Button
             onClick={handleResetBoard}
             className="bg-red-600 hover:bg-red-700 text-white"
@@ -120,7 +138,6 @@ export default function Globalboard() {
             Admin Reset
           </Button>
 
-          {/* Monthly Filter */}
           <div className="flex items-center gap-2">
             {!showFilterInputs ? (
               <Button
@@ -218,7 +235,7 @@ export default function Globalboard() {
       )}
 
       {/* Table */}
-      <div className="overflow-auto">
+      <div className="overflow-auto relative">
         <Table>
           <TableHeader>
             <TableRow>
@@ -259,7 +276,11 @@ export default function Globalboard() {
                   </TableCell>
                   <TableCell>{user.totalPoints}</TableCell>
                   <TableCell>
-                    <HelpCircle className="w-5 h-5 text-gray-500 bg-gray-200 rounded-full p-1" />
+                    <HelpCircle
+                      onMouseEnter={() => setSelectedUser(user)}
+                      onMouseLeave={() => setSelectedUser(null)}
+                      className="w-5 h-5 text-gray-500 bg-gray-200 rounded-full p-1 cursor-pointer"
+                    />
                   </TableCell>
                   <TableCell>${user.prize_money}</TableCell>
                 </TableRow>
@@ -293,6 +314,32 @@ export default function Globalboard() {
           Next <ChevronsRight className="w-4 h-4" />
         </Button>
       </div>
+
+      {/* Hover Modal */}
+      {selectedUser && (
+        <div
+          onMouseEnter={() => selectedUser && setSelectedUser(selectedUser)}
+          onMouseLeave={() => setSelectedUser(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-transparent"
+        >
+          <div className="bg-white rounded shadow-lg p-6 w-[300px] max-w-full">
+            <h2 className="text-lg font-semibold mb-4 text-black">
+              Eligibility Details
+            </h2>
+            <ul className="text-sm text-black space-y-1">
+              <li>
+                Monthly: {selectedUser.monthly_eligibility ? "Yes" : "No"}
+              </li>
+              <li>Weekly: {selectedUser.weekly_eligibility ? "Yes" : "No"}</li>
+            </ul>
+            <div className="mt-4 text-right">
+              <Button variant="outline" onClick={() => setSelectedUser(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

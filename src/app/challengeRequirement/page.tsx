@@ -216,8 +216,8 @@ const ChallengeRequirementManagement = () => {
 
       {/* Create/Edit Modal */}
       {showFormModal && (
-        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
-          <div className="bg-white p-6 rounded shadow max-w-lg w-full space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-sm p-4">
+          <div className="bg-white p-6 rounded shadow max-w-lg w-full space-y-4 max-h-[80vh] overflow-y-auto">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">
                 {selected ? "Edit Requirement" : "Create Requirement"}

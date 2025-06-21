@@ -285,7 +285,7 @@ const QuestionManagement = () => {
 
         {/* Create/Edit Modal */}
         {(showCreateModal || showEditModal) && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex justify-center items-center p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-sm p-4">
             <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg space-y-5 transform transition-all duration-300 scale-100 opacity-100">
               <div className="flex justify-between items-center border-b pb-3 mb-4">
                 <h2 className="text-2xl font-semibold text-gray-800">
