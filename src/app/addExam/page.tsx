@@ -94,14 +94,21 @@ type UserChallengeStatus = {
   };
 };
 
-export type Challenge = {
+export type ChallengeType =
+  | "special_event"
+  | "weekly"
+  | "monthly"
+  | "mega"
+  | "practice";
+
+export interface Challenge {
   id: number;
-  challenge_type: "special_event" | "weekly" | "monthly" | "mega" | "practice"; // Added 'practice'
+  challenge_type: ChallengeType;
   fee: number;
-  deadline: string;
-  quiz_time: number;
+  deadline: string; // ISO datetime
+  quiz_time: number; // in minutes
   active_status: boolean;
-  event_code: string | null; // Can be null if not special event
+  event_code: string | null;
   registered_users: number;
   result_finalization: boolean;
   start_datetime: string;
@@ -111,50 +118,43 @@ export type Challenge = {
   available_seats: number;
   createdAt: string;
   updatedAt: string;
-  users: UserChallengeStatus[];
-  prizeDetails: PrizeDetails[];
-  rules: Rule; // Single rule object
-  requirements: Requirement; // Single requirement object
+  users: UserChallengeStatus[]; // array of registered users' challenge progress
+  prizeDetails: PrizeDetails[]; // array of prize slabs
+  rules: Rule | null; // rule may be null if not defined
+  requirements: Requirement;
   specialEventDetails: SpecialEventDetails | null;
-  questions: Question[]; // Array of questions linked to the challenge
-  eventId: number | null; // For special events
-};
+  questions: Question[]; // array of questions (can be empty)
+  eventId: number | null; // links to external event table, if applicable
+}
 
 interface ChallengeFormData {
   challenge_type:
-    | "special_event"
     | "weekly"
     | "monthly"
     | "mega"
+    | "special_event"
     | "practice"
     | "";
-  fee: number | "";
-  // Deadline fields
-  deadlineDate: string; // To hold the date part (e.g., "YYYY-MM-DD")
-  deadlineTime: string; // To hold the time part (e.g., "HH:mm")
-  deadline: string; // Keep this for the combined ISO string that you'll send to the backend
-
-  quiz_time: number | "";
+  fee: number | string;
+  deadline: string;
+  deadlineDate: string;
+  deadlineTime: string;
+  quiz_time: number | string;
   active_status: boolean;
   event_code: string;
-
-  // Start Datetime fields (NEWLY ADDED)
-  start_datetime_date: string; // To hold the date part (e.g., "YYYY-MM-DD") for the UI input
-  start_datetime_time: string; // To hold the time part (e.g., "HH:mm") for the UI input
-  start_datetime: string; // Keep this for the combined ISO string to send to the backend
-
-  // End Datetime fields (NEWLY ADDED)
-  end_datetime_date: string; // To hold the date part (e.g., "YYYY-MM-DD") for the UI input
-  end_datetime_time: string; // To hold the time part (e.g., "HH:mm") for the UI input
-  end_datetime: string; // Keep this for the combined ISO string to send to the backend
-
-  total_marks: number | "";
-  total_seats: number | "";
-  questionIds: number[]; // Array of selected question IDs
-  prizeDetailsId: number | ""; // Single selected prize details ID
-  challengeRequirementId: number | ""; // Single selected requirement ID
-  ruleId: number | ""; // Single selected rule ID
-  eventId: number | ""; // Single selected event ID (for special_event)
+  start_datetime: string;
+  start_datetime_date: string;
+  start_datetime_time: string;
+  end_datetime: string;
+  end_datetime_date: string;
+  end_datetime_time: string;
+  total_marks: number | string;
+  total_seats: number | string;
+  questionIds: number[];
+  prizeDetailsId: number | ""; // ensure this is number or empty string
+  challengeRequirementId: number | "";
+  ruleId: number | "";
+  eventId: number | ""; // optional for special events
 }
 
 const ChallengeManagement = () => {
@@ -319,10 +319,11 @@ const ChallengeManagement = () => {
   const fetchEvents = async () => {
     try {
       // Assuming an API endpoint for events for special challenges
-      const response = await fetch(`${baseUrl}/api/events`);
+      const response = await fetch(`${baseUrl}/api/special-event`);
       const data = await response.json();
       if (response.ok && data.success) {
         setEvents(data.data);
+        console.log("Events are :", data.data);
       } else {
         console.error("Failed to fetch events:", data.message);
       }
@@ -593,11 +594,11 @@ const ChallengeManagement = () => {
       !formData.end_datetime ||
       formData.total_marks === "" ||
       formData.total_seats === "" ||
-      formData.questionIds.length === 0 || // Questions are required
-      formData.prizeDetailsId === "" || // Prize details required
-      formData.challengeRequirementId === "" || // Challenge requirement required
-      formData.ruleId === "" || // Rule required
-      (formData.challenge_type === "special_event" && formData.eventId === "") // Event ID required for special event
+      formData.questionIds.length === 0 ||
+      formData.prizeDetailsId === "" ||
+      formData.challengeRequirementId === "" ||
+      formData.ruleId === "" ||
+      (formData.challenge_type === "special_event" && formData.eventId === "")
     ) {
       setError("Please fill in all required fields.");
       return;
@@ -605,6 +606,7 @@ const ChallengeManagement = () => {
 
     setLoading(true);
     setError("");
+
     try {
       interface Payload
         extends Omit<
@@ -617,14 +619,14 @@ const ChallengeManagement = () => {
           | "challengeRequirementId"
           | "ruleId"
           | "eventId"
-          | "deadlineDate" // Remove UI-specific fields from payload
-          | "deadlineTime" // Remove UI-specific fields from payload
-          | "start_datetime_date" // Remove UI-specific fields from payload
-          | "start_datetime_time" // Remove UI-specific fields from payload
-          | "end_datetime_date" // Remove UI-specific fields from payload
-          | "end_datetime_time" // Remove UI-specific fields from payload
+          | "deadlineDate"
+          | "deadlineTime"
+          | "start_datetime_date"
+          | "start_datetime_time"
+          | "end_datetime_date"
+          | "end_datetime_time"
         > {
-        challengeId: number; // Required for update
+        challengeId: number;
         fee: number;
         quiz_time: number;
         total_marks: number;
@@ -642,40 +644,20 @@ const ChallengeManagement = () => {
         quiz_time: Number(formData.quiz_time),
         total_marks: Number(formData.total_marks),
         total_seats: Number(formData.total_seats),
-
-        prizeDetailsIds:
-          typeof formData.prizeDetailsId === "number" &&
-          !isNaN(formData.prizeDetailsId)
-            ? [formData.prizeDetailsId]
-            : [],
-
+        prizeDetailsIds: formData.prizeDetailsId
+          ? [Number(formData.prizeDetailsId)]
+          : [],
         challengeRequirementId: Number(formData.challengeRequirementId),
         ruleId: Number(formData.ruleId),
-
-        // Fix: ensure only number or undefined
         eventId:
-          formData.eventId === "" || formData.eventId === undefined
-            ? undefined
-            : Number(formData.eventId),
+          formData.challenge_type === "special_event" && formData.eventId !== ""
+            ? Number(formData.eventId)
+            : undefined,
       };
-      console.log("Updating challenge with formData:", payload);
 
-      if (formData.challenge_type === "special_event") {
-        // Only assign eventId if it's a number (not an empty string)
-        if (typeof formData.eventId === "number") {
-          payload.eventId = formData.eventId;
-        } else if (formData.eventId !== "") {
-          // If it's a string from select, convert to number
-          payload.eventId = Number(formData.eventId);
-        }
-        // Remove deprecated special event details fields from payload (these are not on ChallengeFormData payload)
-        // if ("title" in payload) delete payload.title;
-        // if ("content" in payload) delete payload.content;
-        // if ("image" in payload) delete payload.image;
-      } else {
-        // Ensure eventId and event_code are not sent for non-special events
-        if ("eventId" in payload) delete payload.eventId;
-        payload.event_code = ""; // Clear event code for non-special events
+      if (formData.challenge_type !== "special_event") {
+        payload.event_code = "";
+        delete payload.eventId;
       }
 
       const response = await fetch(`${baseUrl}/api/challenges/update`, {
@@ -685,10 +667,10 @@ const ChallengeManagement = () => {
       });
 
       const data = await response.json();
-      if (data.success || response.ok) {
+
+      if (response.ok || data.success) {
         setShowEditModal(false);
         setSelectedChallenge(null);
-        // Clear all form data and selected questions details after successful update
         setFormData({
           challenge_type: "",
           fee: "",
@@ -712,14 +694,14 @@ const ChallengeManagement = () => {
           ruleId: "",
           eventId: "",
         });
-        setSelectedQuestionsDetails([]); // Clear selected question details
-        fetchChallenges();
+        setSelectedQuestionsDetails([]);
+        fetchChallenges(); // refresh list
       } else {
         setError(data.message || "Failed to update challenge");
       }
     } catch (err) {
-      setError("Error updating challenge");
-      console.error("Error:", err);
+      console.error("Update error:", err);
+      setError("Error updating challenge.");
     } finally {
       setLoading(false);
     }
@@ -757,59 +739,64 @@ const ChallengeManagement = () => {
   };
 
   // MODIFIED: Handle edit to populate `selectedQuestionsDetails`
-  const handleEdit = (challenge: Challenge) => {
-    setSelectedChallenge(challenge);
-    setFormData({
-      challenge_type: challenge.challenge_type,
-      fee: challenge.fee,
-      deadlineDate: challenge.deadline ? challenge.deadline.split("T")[0] : "",
-      deadlineTime:
-        challenge.deadline && challenge.deadline.split("T")[1]
-          ? challenge.deadline.split("T")[1].substring(0, 5) // "HH:mm"
-          : "",
-      deadline: challenge.deadline, // Keep the original combined string
+  const handleEdit = async (challenge: Challenge) => {
+    try {
+      setSelectedChallenge(challenge);
 
-      quiz_time: challenge.quiz_time,
-      active_status: challenge.active_status,
-      event_code: challenge.event_code || "",
+      // Preload dropdowns
+      await Promise.all([
+        fetchPrizeDetails(),
+        fetchChallengeRequirements(),
+        fetchRules(),
+        fetchEvents(),
+      ]);
 
-      start_datetime_date: challenge.start_datetime
-        ? challenge.start_datetime.split("T")[0]
-        : "",
-      start_datetime_time:
-        challenge.start_datetime && challenge.start_datetime.split("T")[1]
-          ? challenge.start_datetime.split("T")[1].substring(0, 5) // "HH:mm"
-          : "",
-      start_datetime: challenge.start_datetime, // Keep the original combined string
+      // 🔽 Fetch preselected questions
+      const res = await fetch(
+        `${baseUrl}/api/challenges/${challenge.id}/questions`
+      );
+      const data = await res.json();
+      const preselectedQuestions = data.data || [];
 
-      end_datetime_date: challenge.end_datetime
-        ? challenge.end_datetime.split("T")[0]
-        : "",
-      end_datetime_time:
-        challenge.end_datetime && challenge.end_datetime.split("T")[1]
-          ? challenge.end_datetime.split("T")[1].substring(0, 5) // "HH:mm"
-          : "",
-      end_datetime: challenge.end_datetime, // Keep the original combined string
+      // 🔁 Set form data
+      setFormData({
+        challenge_type: challenge.challenge_type,
+        fee: challenge.fee,
+        deadlineDate: challenge.deadline?.split("T")[0] || "",
+        deadlineTime: challenge.deadline?.split("T")[1]?.substring(0, 5) || "",
+        deadline: challenge.deadline,
 
-      total_marks: challenge.total_marks,
-      total_seats: challenge.total_seats,
-      questionIds: challenge.questions
-        ? challenge.questions.map((q) => q.id)
-        : [], // Map to IDs
-      prizeDetailsId:
-        challenge.prizeDetails && challenge.prizeDetails.length > 0
-          ? challenge.prizeDetails[0].id
-          : "", // Assuming single prizeDetails
-      challengeRequirementId: challenge.requirements
-        ? challenge.requirements.id
-        : "",
-      ruleId: challenge.rules ? challenge.rules.id : "",
-      eventId: challenge.eventId || "", // Populate eventId for special challenges
-    });
-    // Populate selectedQuestionsDetails with the full question objects from the challenge
-    setSelectedQuestionsDetails(challenge.questions || []);
-    setShowEditModal(true);
-    setError("");
+        quiz_time: challenge.quiz_time,
+        active_status: challenge.active_status,
+        event_code: challenge.event_code || "",
+
+        start_datetime_date: challenge.start_datetime?.split("T")[0] || "",
+        start_datetime_time:
+          challenge.start_datetime?.split("T")[1]?.substring(0, 5) || "",
+        start_datetime: challenge.start_datetime,
+
+        end_datetime_date: challenge.end_datetime?.split("T")[0] || "",
+        end_datetime_time:
+          challenge.end_datetime?.split("T")[1]?.substring(0, 5) || "",
+        end_datetime: challenge.end_datetime,
+
+        total_marks: challenge.total_marks,
+        total_seats: challenge.total_seats,
+
+        questionIds: preselectedQuestions.map((q: Question) => q.id),
+        prizeDetailsId: challenge.prizeDetails?.[0]?.id ?? "",
+        challengeRequirementId: challenge.requirements?.id ?? "",
+        ruleId: challenge.rules?.id ?? "",
+        eventId: challenge.specialEventDetails?.id ?? "",
+      });
+
+      setSelectedQuestionsDetails(preselectedQuestions);
+      setShowEditModal(true);
+      setError("");
+    } catch (err) {
+      console.error("Error in handleEdit:", err);
+      setError("Failed to load challenge for editing.");
+    }
   };
 
   const handleDelete = (challenge: Challenge) => {
@@ -1316,7 +1303,6 @@ const ChallengeManagement = () => {
                           </option>
                         ))
                       : null}
-                    : (<option disabled>No prize details available</option>)
                   </select>
                 </div>
 
