@@ -27,8 +27,8 @@ const QuestionManagement = () => {
     question: "",
     answers: ["", "", "", ""],
     correct_answer: 0,
-    subjectId: 0,
-    eligibility_flag: ["weekly"],
+    subjectId: -1,
+    eligibility_flag: ["practice"],
     score: 0,
   });
 
@@ -49,6 +49,7 @@ const QuestionManagement = () => {
       const res = await fetch(`${baseUrl}/api/question-bank`);
       const json = await res.json();
       if (json.success) {
+        console.log("Fetched questions:", json.data);
         setQuestions(json.data);
       } else {
         setError(json.message || "Failed to load questions.");
@@ -153,8 +154,8 @@ const QuestionManagement = () => {
       answers: ["", "", "", ""],
       correct_answer: 0,
       // Set subjectId to the first available subject if subjects exist
-      subjectId: subjects.length > 0 ? subjects[0].id : 0,
-      eligibility_flag: ["weekly"],
+      subjectId: -1,
+      eligibility_flag: ["practice"],
       score: 0,
     });
     setSelectedQuestion(null);
@@ -253,7 +254,7 @@ const QuestionManagement = () => {
                               question: q.question,
                               answers: q.answers,
                               correct_answer: q.correct_answer,
-                              subjectId: q.subjectId,
+                              subjectId: q.subject?.id || -1,
                               eligibility_flag: q.eligibility_flag,
                               score: q.score,
                             });
@@ -342,6 +343,9 @@ const QuestionManagement = () => {
                 }
                 className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800 bg-white"
               >
+                <option value={-1} disabled>
+                  select Subject
+                </option>
                 {subjects.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -363,41 +367,6 @@ const QuestionManagement = () => {
                 <p className="text-gray-700 text-sm font-medium">
                   Eligibility Flags:
                 </p>
-                <div className="flex flex-wrap gap-x-4 gap-y-2">
-                  {[
-                    "weekly",
-                    "monthly",
-                    "mega",
-                    "special_event",
-                    "practice",
-                  ].map((flag) => (
-                    <label
-                      key={flag}
-                      className="inline-flex items-center gap-2 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        value={flag}
-                        checked={formData.eligibility_flag.includes(flag)}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setFormData((prev) => ({
-                            ...prev,
-                            eligibility_flag: prev.eligibility_flag.includes(
-                              value
-                            )
-                              ? prev.eligibility_flag.filter((f) => f !== value)
-                              : [...prev.eligibility_flag, value],
-                          }));
-                        }}
-                        className="h-5 w-5 text-blue-600 rounded focus:ring-blue-500"
-                      />
-                      <span className="text-gray-700 capitalize">
-                        {flag.replace("_", " ")}
-                      </span>
-                    </label>
-                  ))}
-                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
