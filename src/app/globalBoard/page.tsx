@@ -34,9 +34,15 @@ type User = {
 };
 
 type SortingItem = {
-  id: number;
+  userId: number;
+  userName: string;
   image: string;
   position: number;
+  totalPoints?: number;
+  monthlySubmitTime?: string | null;
+  weeklySubmitTime?: string | null;
+  practicePassed?: number;
+  previousRank?: number | null;
 };
 
 type Sorting = {
@@ -338,9 +344,12 @@ export default function Globalboard() {
             </h2>
             <ul className="text-sm text-black space-y-1">
               <li>
-                Monthly: {selectedUser.monthly_eligibility ? "Yes" : "No"}
+                Monthly: {selectedUser.monthly_eligibility} /{" "}
+                {monthlyEligibility}
               </li>
-              <li>Weekly: {selectedUser.weekly_eligibility ? "Yes" : "No"}</li>
+              <li>
+                Weekly: {selectedUser.weekly_eligibility} / {weeklyEligibility}
+              </li>
             </ul>
             <div className="mt-4 text-right">
               <Button variant="outline" onClick={() => setSelectedUser(null)}>
@@ -379,26 +388,58 @@ export default function Globalboard() {
                       <TableRow className="bg-gray-100">
                         <TableHead className="py-2 px-3">Position</TableHead>
                         <TableHead className="py-2 px-3">Image</TableHead>
-                        <TableHead className="py-2 px-3">User ID</TableHead>
+                        <TableHead className="py-2 px-3">User</TableHead>
+                        {/* Optional: Show additional columns based on key */}
+                        {key === "byTotalPoints" && (
+                          <TableHead>Total Points</TableHead>
+                        )}
+                        {key === "byPracticePassed" && (
+                          <TableHead>Practice Passed</TableHead>
+                        )}
+                        {key === "byMonthlySubmitTime" && (
+                          <TableHead>Monthly Submit Time</TableHead>
+                        )}
+                        {key === "byWeeklySubmitTime" && (
+                          <TableHead>Weekly Submit Time</TableHead>
+                        )}
+                        {key === "byPreviousRank" && (
+                          <TableHead>Previous Rank</TableHead>
+                        )}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {list.map((item) => (
-                        <TableRow
-                          key={`${key}-${item.id}`}
-                          className="hover:bg-gray-50 transition-colors"
-                        >
-                          <TableCell className="py-2 px-3">
-                            {item.position}
-                          </TableCell>
-                          <TableCell className="py-2 px-3">
+                        <TableRow key={`${key}-${item.userId}`}>
+                          <TableCell>{item.position}</TableCell>
+                          <TableCell>
                             <img
                               src={item.image}
-                              alt={`User ${item.id}`}
+                              alt={`User ${item.userId}`}
                               className="w-9 h-9 rounded-full object-cover border"
                             />
                           </TableCell>
-                          <TableCell className="py-2 px-3">{item.id}</TableCell>
+                          <TableCell>{item.userName}</TableCell>
+
+                          {/* Conditionally show extra data */}
+                          {key === "byTotalPoints" && (
+                            <TableCell>{item.totalPoints}</TableCell>
+                          )}
+                          {key === "byPracticePassed" && (
+                            <TableCell>{item.practicePassed}</TableCell>
+                          )}
+                          {key === "byMonthlySubmitTime" && (
+                            <TableCell>
+                              {item.monthlySubmitTime ?? "N/A"}
+                            </TableCell>
+                          )}
+                          {key === "byWeeklySubmitTime" && (
+                            <TableCell>
+                              {item.weeklySubmitTime ?? "N/A"}
+                            </TableCell>
+                          )}
+                          {key === "byPreviousRank" && (
+                            <TableCell>{item.previousRank ?? "N/A"}</TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>

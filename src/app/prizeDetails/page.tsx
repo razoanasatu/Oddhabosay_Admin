@@ -287,6 +287,9 @@ export default function PrizeDetailsManagement() {
           <thead className="bg-gradient-to-r from-purple-600 to-blue-800">
             <tr>
               <th className="px-6 py-5 text-left text-xs font-semibold text-white uppercase tracking-wider border-r border-blue-700">
+                ID
+              </th>
+              <th className="px-6 py-5 text-left text-xs font-semibold text-white uppercase tracking-wider border-r border-blue-700">
                 Position & Prize Breakdown
               </th>
               <th className="px-6 py-5 text-center text-xs font-semibold text-white uppercase tracking-wider border-r border-blue-700">
@@ -307,7 +310,7 @@ export default function PrizeDetailsManagement() {
             {prizeDetailsList.length === 0 ? (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="text-center py-10 text-gray-500 text-lg italic"
                 >
                   No prize details found. Please add new entries.
@@ -319,6 +322,9 @@ export default function PrizeDetailsManagement() {
                   key={details.id}
                   className="border-b border-gray-200 hover:bg-purple-50 transition-colors duration-200 ease-in-out"
                 >
+                  <td className="px-6 py-4 border-r border-gray-200 text-sm text-gray-800 font-mono">
+                    {details.id}
+                  </td>
                   <td className="px-6 py-4 border-r border-gray-200">
                     {details.prize_positions?.map((p, i) => (
                       <div
@@ -382,6 +388,7 @@ export default function PrizeDetailsManagement() {
           </tbody>
         </table>
       </div>
+
       {/* Create/Edit Modal */}
       {(showCreateModal || showEditModal) && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">

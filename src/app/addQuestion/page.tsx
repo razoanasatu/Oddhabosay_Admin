@@ -29,7 +29,7 @@ const QuestionManagement = () => {
     correct_answer: 0,
     subjectId: 0,
     eligibility_flag: ["weekly"],
-    score: 10,
+    score: 0,
   });
 
   const [loading, setLoading] = useState(false);
@@ -155,7 +155,7 @@ const QuestionManagement = () => {
       // Set subjectId to the first available subject if subjects exist
       subjectId: subjects.length > 0 ? subjects[0].id : 0,
       eligibility_flag: ["weekly"],
-      score: 10,
+      score: 0,
     });
     setSelectedQuestion(null);
     setError("");
@@ -326,7 +326,7 @@ const QuestionManagement = () => {
               ))}
 
               <input
-                type="number"
+                type="text"
                 value={formData.correct_answer}
                 onChange={(e) =>
                   setFormData({ ...formData, correct_answer: +e.target.value })
@@ -350,7 +350,7 @@ const QuestionManagement = () => {
               </select>
 
               <input
-                type="number"
+                type="text"
                 value={formData.score}
                 onChange={(e) =>
                   setFormData({ ...formData, score: +e.target.value })
