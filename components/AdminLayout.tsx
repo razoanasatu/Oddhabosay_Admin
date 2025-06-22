@@ -3,9 +3,9 @@
 import clsx from "clsx";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { destroyCookie } from "nookies"; // 👈 Import nookies
 import { useState } from "react";
-
 import { FaBars, FaBell, FaTimes } from "react-icons/fa";
 import { FiSearch } from "react-icons/fi";
 
@@ -13,7 +13,6 @@ const navItems = [
   { label: "Dashboard", href: "/" },
   { label: "All Users", href: "/allUsers" },
   { label: "Global Board", href: "/globalBoard" },
-  //{ label: "Challenges", href: "/challengesPage" },
   { label: "Challenge", href: "/addExam" },
   { label: "Subject", href: "/addSubjects" },
   { label: "Questions", href: "/addQuestion" },
@@ -24,8 +23,8 @@ const navItems = [
   { label: "Win a Laptop", href: "/winLaptopDetails" },
   { label: "Eligibility Details", href: "/eligibilityDetails" },
   { label: "Participation", href: "/participationPage" },
-  //{ label: "Challenge Requirement", href: "/challengeRequirement" },
-  { label: "More", href: "/admin/more" },
+  // Insert "Log Out" before "More"
+  { label: "Log Out", href: "#logout" },
 ];
 
 export default function AdminLayout({
@@ -34,7 +33,15 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleLogout = () => {
+    destroyCookie(null, "token");
+    destroyCookie(null, "user");
+
+    router.push("/signIn");
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -62,6 +69,19 @@ export default function AdminLayout({
         <nav className="flex-1 flex flex-col justify-center px-4 space-y-4">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+
+            if (item.label === "Log Out") {
+              return (
+                <button
+                  key="logout"
+                  onClick={handleLogout}
+                  className="text-white hover:bg-gray-700 p-2 rounded px-10 text-left"
+                >
+                  Log Out
+                </button>
+              );
+            }
+
             return (
               <Link
                 key={item.label}
