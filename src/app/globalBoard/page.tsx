@@ -61,6 +61,7 @@ export default function Globalboard() {
   const [inputYear, setInputYear] = useState<number | "">("");
 
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showSortingModal, setShowSortingModal] = useState(false);
 
   const rowsPerPage = 10;
   const totalPages = Math.ceil(users.length / rowsPerPage);
@@ -131,12 +132,21 @@ export default function Globalboard() {
         <h1 className="text-black text-xl font-bold">GlobalBoard</h1>
 
         <div className="flex items-center gap-4 flex-wrap">
-          <Button
-            onClick={handleResetBoard}
-            className="bg-red-600 hover:bg-red-700 text-white"
-          >
-            Admin Reset
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleResetBoard}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Admin Reset
+            </Button>
+
+            <Button
+              onClick={() => setShowSortingModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              See Details
+            </Button>
+          </div>
 
           <div className="flex items-center gap-2">
             {!showFilterInputs ? (
@@ -334,6 +344,74 @@ export default function Globalboard() {
             </ul>
             <div className="mt-4 text-right">
               <Button variant="outline" onClick={() => setSelectedUser(null)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sorting Details Modal */}
+      {showSortingModal && sorting && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-5xl max-h-[85vh] overflow-y-auto transition-all">
+            <div className="flex justify-between items-center mb-6 border-b pb-3">
+              <h2 className="text-2xl font-semibold text-gray-900">
+                Sorting Details
+              </h2>
+              <button
+                onClick={() => setShowSortingModal(false)}
+                className="text-gray-500 hover:text-gray-800 transition-colors"
+                aria-label="Close modal"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-8">
+              {Object.entries(sorting).map(([key, list]) => (
+                <section key={key}>
+                  <h3 className="text-lg font-medium text-gray-700 mb-4 border-l-4 border-blue-500 pl-3 capitalize">
+                    {key.replace(/([A-Z])/g, " $1")}
+                  </h3>
+                  <Table className="w-full text-sm text-left">
+                    <TableHeader>
+                      <TableRow className="bg-gray-100">
+                        <TableHead className="py-2 px-3">Position</TableHead>
+                        <TableHead className="py-2 px-3">Image</TableHead>
+                        <TableHead className="py-2 px-3">User ID</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {list.map((item) => (
+                        <TableRow
+                          key={`${key}-${item.id}`}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          <TableCell className="py-2 px-3">
+                            {item.position}
+                          </TableCell>
+                          <TableCell className="py-2 px-3">
+                            <img
+                              src={item.image}
+                              alt={`User ${item.id}`}
+                              className="w-9 h-9 rounded-full object-cover border"
+                            />
+                          </TableCell>
+                          <TableCell className="py-2 px-3">{item.id}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </section>
+              ))}
+            </div>
+
+            <div className="mt-8 text-right">
+              <Button
+                variant="outline"
+                onClick={() => setShowSortingModal(false)}
+              >
                 Close
               </Button>
             </div>

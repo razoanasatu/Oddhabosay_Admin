@@ -419,7 +419,7 @@ export default function PrizeDetailsManagement() {
                     <tr key={index}>
                       <td className="border px-2 py-1">
                         <input
-                          type="number"
+                          type="text"
                           value={prize.threshold ?? ""}
                           onChange={(e) =>
                             handlePrizeChange(
@@ -446,7 +446,7 @@ export default function PrizeDetailsManagement() {
                       </td>
                       <td className="border px-2 py-1">
                         <input
-                          type="number"
+                          type="text"
                           value={prize.prize_money}
                           onChange={(e) =>
                             handlePrizeChange(
@@ -462,7 +462,7 @@ export default function PrizeDetailsManagement() {
                       </td>
                       <td className="border px-2 py-1">
                         <input
-                          type="number"
+                          type="text"
                           value={prize.user_number}
                           onChange={(e) =>
                             handlePrizeChange(
@@ -478,7 +478,7 @@ export default function PrizeDetailsManagement() {
                       </td>
                       <td className="border px-2 py-1">
                         <input
-                          type="number"
+                          type="text"
                           value={prize.limit}
                           onChange={(e) =>
                             handlePrizeChange(index, "limit", e.target.value)
@@ -522,7 +522,8 @@ export default function PrizeDetailsManagement() {
               <label>
                 Monthly Eligibility:
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   value={monthlyEligibility}
                   onChange={(e) =>
                     setMonthlyEligibility(Number(e.target.value))
@@ -535,7 +536,7 @@ export default function PrizeDetailsManagement() {
               <label>
                 Weekly Eligibility:
                 <input
-                  type="number"
+                  type="text"
                   value={weeklyEligibility}
                   onChange={(e) => setWeeklyEligibility(Number(e.target.value))}
                   className="ml-2 border rounded px-2 py-1"
