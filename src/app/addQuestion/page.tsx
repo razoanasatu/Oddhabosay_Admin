@@ -15,7 +15,7 @@ type Question = {
   answers: string[];
   correct_answer: number;
   subjectId: number;
-  subject?: Subject; // Optional, as it might be populated after fetching subjects
+  subject?: Subject;
   eligibility_flag: string[];
   score: number;
 };
@@ -40,8 +40,11 @@ const QuestionManagement = () => {
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(
     null
   );
+  const [searchKeyword, setSearchKeyword] = useState("");
 
-  // Removed: searchKeyword state as this page is for management, not selection/search.
+  const filteredQuestions = questions.filter((q) =>
+    q.subject?.name.toLowerCase().includes(searchKeyword.toLowerCase())
+  );
 
   const fetchQuestions = async () => {
     try {
@@ -49,7 +52,6 @@ const QuestionManagement = () => {
       const res = await fetch(`${baseUrl}/api/question-bank`);
       const json = await res.json();
       if (json.success) {
-        console.log("Fetched questions:", json.data);
         setQuestions(json.data);
       } else {
         setError(json.message || "Failed to load questions.");
@@ -68,7 +70,6 @@ const QuestionManagement = () => {
       const json = await res.json();
       if (json.success) {
         setSubjects(json.data);
-        // Set default subjectId if not already set, using the first subject from fetched data
         if (!formData.subjectId && json.data.length > 0) {
           setFormData((prev) => ({ ...prev, subjectId: json.data[0].id }));
         }
@@ -76,7 +77,7 @@ const QuestionManagement = () => {
     } catch (err) {
       console.error("Error fetching subjects:", err);
     }
-  }, [formData.subjectId]); // Dependency added to ensure it re-runs if formData.subjectId changes from outside
+  }, [formData.subjectId]);
 
   useEffect(() => {
     fetchQuestions();
@@ -108,8 +109,8 @@ const QuestionManagement = () => {
       if (res.ok && json.success) {
         setShowCreateModal(false);
         setShowEditModal(false);
-        fetchQuestions(); // Refresh the list of questions
-        resetForm(); // Clear the form after submission
+        fetchQuestions();
+        resetForm();
       } else {
         setError(json.message || "Submission failed. Please try again.");
       }
@@ -122,20 +123,18 @@ const QuestionManagement = () => {
   };
 
   const deleteQuestion = async () => {
-    if (!selectedQuestion) return; // Should not happen if modal is correctly controlled
+    if (!selectedQuestion) return;
     setLoading(true);
     try {
       const res = await fetch(
         `${baseUrl}/api/question-bank/${selectedQuestion.id}`,
-        {
-          method: "DELETE",
-        }
+        { method: "DELETE" }
       );
 
       if (res.ok) {
-        fetchQuestions(); // Refresh the list after deletion
+        fetchQuestions();
         setShowDeleteModal(false);
-        setSelectedQuestion(null); // Clear selected question
+        setSelectedQuestion(null);
       } else {
         const json = await res.json();
         setError(json.message || "Deletion failed.");
@@ -153,7 +152,6 @@ const QuestionManagement = () => {
       question: "",
       answers: ["", "", "", ""],
       correct_answer: 0,
-      // Set subjectId to the first available subject if subjects exist
       subjectId: -1,
       eligibility_flag: ["practice"],
       score: 0,
@@ -161,9 +159,6 @@ const QuestionManagement = () => {
     setSelectedQuestion(null);
     setError("");
   };
-
-  // Removed: filteredQuestions logic, as search is removed from this page.
-  // The table will now directly display the 'questions' state.
 
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
@@ -183,7 +178,34 @@ const QuestionManagement = () => {
           </button>
         </div>
 
-        {/* Removed: Search bar section */}
+        {/* 🔍 Professional Search Bar */}
+        <div className="mb-6">
+          <div className="relative max-w-md">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg
+                className="h-5 w-5 text-gray-400"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-4.35-4.35M16.65 16.65A7 7 0 1010 3a7 7 0 006.65 13.65z"
+                />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search by subject(e.g. Math...)"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+            />
+          </div>
+        </div>
 
         {error && (
           <div className="text-red-700 bg-red-100 border border-red-300 px-4 py-3 rounded-md mb-6 shadow-sm">
@@ -219,66 +241,60 @@ const QuestionManagement = () => {
                     Loading questions...
                   </td>
                 </tr>
-              ) : questions.length === 0 ? (
+              ) : filteredQuestions.length === 0 ? (
                 <tr>
                   <td
                     colSpan={4}
                     className="text-center py-10 text-gray-500 text-lg"
                   >
-                    No questions available. Click &quot;Add New Question&quot;
-                    to get started.
+                    No questions match your search.
                   </td>
                 </tr>
               ) : (
-                questions.map(
-                  (
-                    q // Directly map over 'questions' state
-                  ) => (
-                    <tr
-                      key={q.id}
-                      className="border-t hover:bg-gray-50 transition-colors duration-150 ease-in-out"
-                    >
-                      <td className="p-4 text-gray-900 max-w-lg overflow-hidden text-ellipsis whitespace-nowrap">
-                        {q.question}
-                      </td>
-                      <td className="p-4 text-gray-700">
-                        {q.subject?.name || "N/A"}{" "}
-                        {/* Display subject name directly */}
-                      </td>
-                      <td className="p-4 text-gray-700">{q.score}</td>
-                      <td className="p-4 text-right flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => {
-                            setSelectedQuestion(q);
-                            setFormData({
-                              question: q.question,
-                              answers: q.answers,
-                              correct_answer: q.correct_answer,
-                              subjectId: q.subject?.id || -1,
-                              eligibility_flag: q.eligibility_flag,
-                              score: q.score,
-                            });
-                            setShowEditModal(true);
-                          }}
-                          className="p-2 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-150"
-                          title="Edit Question"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedQuestion(q);
-                            setShowDeleteModal(true);
-                          }}
-                          className="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors duration-150"
-                          title="Delete Question"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                )
+                filteredQuestions.map((q) => (
+                  <tr
+                    key={q.id}
+                    className="border-t hover:bg-gray-50 transition-colors duration-150 ease-in-out"
+                  >
+                    <td className="p-4 text-gray-900 max-w-lg overflow-hidden text-ellipsis whitespace-nowrap">
+                      {q.question}
+                    </td>
+                    <td className="p-4 text-gray-700">
+                      {q.subject?.name || "N/A"}
+                    </td>
+                    <td className="p-4 text-gray-700">{q.score}</td>
+                    <td className="p-4 text-right flex items-center justify-end space-x-2">
+                      <button
+                        onClick={() => {
+                          setSelectedQuestion(q);
+                          setFormData({
+                            question: q.question,
+                            answers: q.answers,
+                            correct_answer: q.correct_answer,
+                            subjectId: q.subject?.id || -1,
+                            eligibility_flag: q.eligibility_flag,
+                            score: q.score,
+                          });
+                          setShowEditModal(true);
+                        }}
+                        className="p-2 text-blue-600 hover:text-blue-800 rounded-full hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-150"
+                        title="Edit Question"
+                      >
+                        <Edit size={18} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedQuestion(q);
+                          setShowDeleteModal(true);
+                        }}
+                        className="p-2 text-red-600 hover:text-red-800 rounded-full hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors duration-150"
+                        title="Delete Question"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
@@ -326,15 +342,23 @@ const QuestionManagement = () => {
                 />
               ))}
 
-              <input
-                type="text"
-                value={formData.correct_answer}
-                onChange={(e) =>
-                  setFormData({ ...formData, correct_answer: +e.target.value })
-                }
-                placeholder="Correct answer index (0-based, e.g., 0 for first option)"
-                className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
-              />
+              <div>
+                <p className="mb-1 text-sm font-medium text-gray-700">
+                  Correct Option
+                </p>
+                <input
+                  type="text"
+                  value={formData.correct_answer}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      correct_answer: +e.target.value,
+                    })
+                  }
+                  placeholder="Correct answer index (0-based, e.g., 0 for first option)"
+                  className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                />
+              </div>
 
               <select
                 value={formData.subjectId}
@@ -353,20 +377,17 @@ const QuestionManagement = () => {
                 ))}
               </select>
 
-              <input
-                type="text"
-                value={formData.score}
-                onChange={(e) =>
-                  setFormData({ ...formData, score: +e.target.value })
-                }
-                placeholder="Score for this question"
-                className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
-              />
-
-              <div className="space-y-2">
-                <p className="text-gray-700 text-sm font-medium">
-                  Eligibility Flags:
-                </p>
+              <div>
+                <p className="mb-1 text-sm font-medium text-gray-700">Score</p>
+                <input
+                  type="text"
+                  value={formData.score}
+                  onChange={(e) =>
+                    setFormData({ ...formData, score: +e.target.value })
+                  }
+                  placeholder="Score for this question"
+                  className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+                />
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
@@ -394,12 +415,12 @@ const QuestionManagement = () => {
 
         {/* Delete confirmation modal */}
         {showDeleteModal && selectedQuestion && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+          <div className="fixed inset-0 bg-white/30 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white p-8 rounded-lg shadow-2xl w-full max-w-sm space-y-6 transform transition-all duration-300 scale-100 opacity-100">
               <p className="text-gray-800 text-lg text-center">
                 Are you sure you want to delete the question:{" "}
                 <strong className="font-semibold text-red-600">
-                  <div>&quot;{selectedQuestion.question}&quot;</div>
+                  &quot;{selectedQuestion.question}&quot;
                 </strong>
                 ?
                 <br />

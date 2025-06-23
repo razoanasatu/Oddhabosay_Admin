@@ -903,7 +903,7 @@ const ChallengeManagement = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Active
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -974,18 +974,20 @@ const ChallengeManagement = () => {
                               `http://localhost:3000/challengeResult/${challenge.id}`
                             )
                           }
-                          className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-100 transition-colors"
+                          className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors"
                           title="View Challenge Result"
                         >
-                          <Eye size={16} />
+                          <Eye size={20} />
                         </button>
+
                         <button
                           onClick={() => handleEdit(challenge)}
-                          className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                          className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors"
                           title="Edit Challenge"
                         >
                           <Edit size={16} />
                         </button>
+
                         <button
                           onClick={() => handleDelete(challenge)}
                           className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
