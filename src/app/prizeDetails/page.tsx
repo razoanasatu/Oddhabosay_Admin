@@ -9,7 +9,7 @@ interface PrizePosition {
   position: string;
   prize_money: number;
   user_number: number;
-  limit: number;
+  /*limit: number;*/
 }
 
 interface PrizeDetails {
@@ -33,7 +33,12 @@ export default function PrizeDetailsManagement() {
     useState<PrizeDetails | null>(null);
 
   const [prizePositions, setPrizePositions] = useState<PrizePosition[]>([
-    { threshold: 0, position: "", prize_money: 0, user_number: 0, limit: 0 },
+    {
+      threshold: 0,
+      position: "",
+      prize_money: 0,
+      user_number: 0 /*,limit: 0*/,
+    },
   ]);
   const [globalBoard, setGlobalBoard] = useState(false);
   const [monthlyEligibility, setMonthlyEligibility] = useState(0);
@@ -73,7 +78,12 @@ export default function PrizeDetailsManagement() {
 
   const resetForm = () => {
     setPrizePositions([
-      { threshold: 0, position: "", prize_money: 0, user_number: 0, limit: 0 },
+      {
+        threshold: 0,
+        position: "",
+        prize_money: 0,
+        user_number: 0 /*,limit: 0*/,
+      },
     ]);
     setGlobalBoard(false);
     setMonthlyEligibility(0);
@@ -118,7 +128,12 @@ export default function PrizeDetailsManagement() {
   const addPrizeRow = () => {
     setPrizePositions([
       ...prizePositions,
-      { threshold: 0, position: "", prize_money: 0, user_number: 0, limit: 0 },
+      {
+        threshold: 0,
+        position: "",
+        prize_money: 0,
+        user_number: 0 /*,limit: 0*/,
+      },
     ]);
   };
 
@@ -133,7 +148,7 @@ export default function PrizeDetailsManagement() {
               position: "",
               prize_money: 0,
               user_number: 0,
-              limit: 0,
+              /*limit: 0,*/
             },
           ]
     );
@@ -141,7 +156,9 @@ export default function PrizeDetailsManagement() {
   const [thresholdGroups, setThresholdGroups] = useState([
     {
       threshold: 1, // Threshold value for this group
-      prizes: [{ position: "", prize_money: "", user_number: "", limit: "" }],
+      prizes: [
+        { position: "", prize_money: "", user_number: "" /*limit: ""*/ },
+      ],
     },
   ]);
 
@@ -259,8 +276,8 @@ export default function PrizeDetailsManagement() {
         );
         return false;
       }
-      if (p.prize_money <= 0 || p.user_number <= 0 || p.limit <= 0) {
-        setError("Prize money, user number, and limit must be > 0.");
+      if (p.prize_money <= 0 || p.user_number <= 0 /*|| p.limit <= 0*/) {
+        setError("Prize money, user number > 0.");
         return false;
       }
     }
@@ -342,7 +359,7 @@ export default function PrizeDetailsManagement() {
                           <span className="font-medium">৳{p.prize_money}</span>{" "}
                           | Target Users:{" "}
                           <span className="font-medium">{p.user_number}</span> |
-                          Limit: <span className="font-medium">{p.limit}</span>
+                          {/*{Limit: <span className="font-medium">{p.limit}</span>}*/}
                         </p>
                       </div>
                     ))}
@@ -417,7 +434,7 @@ export default function PrizeDetailsManagement() {
                     <th className="border px-3 py-2">Position</th>
                     <th className="border px-3 py-2">Prize Money</th>
                     <th className="border px-3 py-2">User Number</th>
-                    <th className="border px-3 py-2">Limit</th>
+                    {/*<th className="border px-3 py-2">Limit</th>*/}
                     <th className="border px-3 py-2">Action</th>
                   </tr>
                 </thead>
@@ -483,7 +500,7 @@ export default function PrizeDetailsManagement() {
                           required
                         />
                       </td>
-                      <td className="border px-2 py-1">
+                      {/*<td className="border px-2 py-1">
                         <input
                           type="text"
                           value={prize.limit}
@@ -494,7 +511,7 @@ export default function PrizeDetailsManagement() {
                           min={1}
                           required
                         />
-                      </td>
+                      </td>*/}
                       <td className="border px-2 py-1 text-center">
                         <button
                           onClick={() => removePrizeRow(index)}
