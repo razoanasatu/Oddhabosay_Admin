@@ -970,9 +970,7 @@ const ChallengeManagement = () => {
                       <div className="flex gap-2 justify-end">
                         <button
                           onClick={() =>
-                            router.push(
-                              `oddhabosay-admin.vercel.app/challengeResult/${challenge.id}`
-                            )
+                            router.push(`/challengeResult/${challenge.id}`)
                           }
                           className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors"
                           title="View Challenge Result"
