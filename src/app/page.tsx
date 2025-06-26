@@ -44,7 +44,7 @@ export default function Dashboard() {
         "Active users registered on the platform this month across all regions.",
     },
     {
-      title: "User Engagement",
+      title: "All Challenges",
       description: "Statistics on user activity and engagement metrics.",
     },
     {
