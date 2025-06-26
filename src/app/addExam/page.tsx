@@ -971,7 +971,7 @@ const ChallengeManagement = () => {
                         <button
                           onClick={() =>
                             router.push(
-                              `http://localhost:3000/challengeResult/${challenge.id}`
+                              `oddhabosay-admin.vercel.app/challengeResult/${challenge.id}`
                             )
                           }
                           className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors"
