@@ -20,6 +20,7 @@ import {
 import { baseUrl } from "@/utils/constant";
 import { Bell, ChevronsLeft, ChevronsRight, Eye, Search } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import * as XLSX from "xlsx";
 
 interface ApiUser {
   id: number;
@@ -28,6 +29,7 @@ interface ApiUser {
   phone_no: string;
   address: string;
   image: string | null;
+  institution_name?: string; // Add this line
 }
 
 export default function Dashboard() {
@@ -182,6 +184,28 @@ export default function Dashboard() {
     }
   };
 
+  const exportUserToExcel = (user: ApiUser) => {
+    const data = [
+      {
+        ID: user.id,
+        Name: user.full_name,
+        Email: user.email,
+        Address: user.address,
+        Phone: user.phone_no,
+        Institution: user.institution_name || "N/A", // ✅ Added
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "User Info");
+
+    XLSX.writeFile(
+      workbook,
+      `User-${user.full_name.replace(/\s+/g, "_")}.xlsx`
+    );
+  };
+
   return (
     <div className="p-6 w-full min-h-screen bg-gray-50">
       <h1 className="text-3xl font-bold mb-6 text-black">User Dashboard</h1>
@@ -226,96 +250,111 @@ export default function Dashboard() {
 
       {/* Table */}
       <div className="overflow-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12">
-                <input type="checkbox" className="rounded" />
-              </TableHead>
-              <TableHead>ID</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Address</TableHead>
-              <TableHead>Phone</TableHead>
-              <TableHead>Action</TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {loading ? (
+        <div style={{ minWidth: "900px" }}>
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
-                  Loading users...
-                </TableCell>
+                <TableHead className="w-12">
+                  {/*<input type="checkbox" className="rounded" />*/}
+                </TableHead>
+                <TableHead>ID</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Address</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Institution</TableHead>
+                <TableHead>Action</TableHead>
               </TableRow>
-            ) : error ? (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-red-500">
-                  {error}
-                </TableCell>
-              </TableRow>
-            ) : currentRows.length > 0 ? (
-              currentRows.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <input type="checkbox" className="rounded" />
-                  </TableCell>
-                  <TableCell>{user.id}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={
-                          user.image ||
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            user.full_name
-                          )}&background=random`
-                        }
-                        alt={user.full_name}
-                        className="w-8 h-8 rounded-full"
-                      />
-                      <span>{user.full_name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.address}</TableCell>
-                  <TableCell>{user.phone_no}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="rounded-md border border-purple-500 text-purple-500 hover:bg-purple-100"
-                        title="View"
-                        onClick={() => {
-                          setSelectedUserId(user.id);
-                          fetchUserResults(user.id);
-                        }}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
+            </TableHeader>
 
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="rounded-md border border-purple-500 text-purple-500 hover:bg-purple-100"
-                        title="Send Notification"
-                        onClick={() => sendNotificationToUser(user.id)}
-                      >
-                        <Bell className="w-4 h-4" />
-                      </Button>
-                    </div>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center">
+                    Loading users...
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center text-gray-500">
-                  No users found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-red-500">
+                    {error}
+                  </TableCell>
+                </TableRow>
+              ) : currentRows.length > 0 ? (
+                currentRows.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      {/*<input type="checkbox" className="rounded" />*/}
+                    </TableCell>
+                    <TableCell>{user.id}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={
+                            user.image ||
+                            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                              user.full_name
+                            )}&background=random`
+                          }
+                          alt={user.full_name}
+                          className="w-8 h-8 rounded-full"
+                        />
+                        <span>{user.full_name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>{user.address}</TableCell>
+                    <TableCell>{user.phone_no}</TableCell>
+                    <TableCell>{user.institution_name || "-"}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="rounded-md border border-purple-500 text-purple-500 hover:bg-purple-100"
+                            title="View"
+                            onClick={() => {
+                              setSelectedUserId(user.id);
+                              fetchUserResults(user.id);
+                            }}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="rounded-md border border-purple-500 text-purple-500 hover:bg-purple-100"
+                            title="Send Notification"
+                            onClick={() => sendNotificationToUser(user.id)}
+                          >
+                            <Bell className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="rounded-md border border-green-500 text-green-600 hover:bg-green-100"
+                          title="Export to Excel"
+                          onClick={() => exportUserToExcel(user)}
+                        >
+                          📄 Export
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-gray-500">
+                    No users found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Pagination */}

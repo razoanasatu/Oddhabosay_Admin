@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 // Define a type for your user data for better type safety
 interface User {
   id: number;
