@@ -135,7 +135,7 @@ export default function Globalboard() {
     <div className="p-6 w-full min-h-screen bg-gray-50">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
-        <h1 className="text-black text-xl font-bold">GlobalBoard</h1>
+        <h1 className="text-black text-xl font-bold">LeaderBoard</h1>
 
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">

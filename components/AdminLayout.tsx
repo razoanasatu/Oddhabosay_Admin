@@ -12,7 +12,7 @@ import { FiSearch } from "react-icons/fi";
 const navItems = [
   { label: "Dashboard", href: "/" },
   { label: "All Users", href: "/allUsers" },
-  { label: "Global Board", href: "/globalBoard" },
+  { label: "LeaderBoard", href: "/globalBoard" },
   { label: "Challenge", href: "/addExam" },
   { label: "Subject", href: "/addSubjects" },
   { label: "Questions", href: "/addQuestion" },

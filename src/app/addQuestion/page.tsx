@@ -3,7 +3,7 @@
 import { baseUrl } from "@/utils/constant";
 import { Edit, Plus, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-
+import * as XLSX from "xlsx";
 type Subject = {
   id: number;
   name: string;
@@ -160,6 +160,61 @@ const QuestionManagement = () => {
     setError("");
   };
 
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = async (event) => {
+      const arrayBuffer = event.target?.result as ArrayBuffer;
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+      const formattedQuestions = jsonData.map((row) => ({
+        question: row.question,
+        answers: [row.option1, row.option2, row.option3, row.option4],
+        correct_answer: Number(row.correct_answer),
+        subjectId:
+          subjects.find(
+            (s) => s.name.toLowerCase() === row.subject?.toLowerCase()
+          )?.id || -1,
+        eligibility_flag: row.exam_type
+          ? row.exam_type
+              .split(",")
+              .map((flag: string) => flag.trim())
+              .filter((flag: string) => flag) // remove empty strings
+          : ["practice"],
+        score: Number(row.score),
+      }));
+
+      try {
+        setLoading(true);
+        const res = await fetch(`${baseUrl}/api/question-bank/add-multiple`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formattedQuestions),
+        });
+
+        const json = await res.json();
+        if (res.ok && json.success) {
+          fetchQuestions(); // Refresh question list
+          alert("Questions uploaded successfully!");
+        } else {
+          setError(json.message || "Bulk upload failed.");
+        }
+      } catch (err) {
+        console.error("Upload error:", err);
+        setError("Failed to upload questions.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    reader.readAsArrayBuffer(file); // ✅ Modern and supported
+  };
+
   return (
     <div className="p-4 bg-gray-50 min-h-screen">
       <div className="max-w-6xl mx-auto">
@@ -176,6 +231,16 @@ const QuestionManagement = () => {
           >
             <Plus size={18} /> Add New Question
           </button>
+
+          <label className="px-5 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 cursor-pointer shadow-md">
+            <input
+              type="file"
+              accept=".xlsx, .xls"
+              onChange={handleExcelUpload}
+              className="hidden"
+            />
+            Upload Excel
+          </label>
         </div>
 
         {/* 🔍 Professional Search Bar */}

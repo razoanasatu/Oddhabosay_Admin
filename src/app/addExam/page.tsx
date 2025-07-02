@@ -4,9 +4,12 @@ import { baseUrl } from "@/utils/constant";
 import { Edit, Eye, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { BsFillCloudUploadFill } from "react-icons/bs";
 //import QuestionSelector from "../questionSelection/QuestionSelector";
 // Define Challenge types based on your API response
-export type PrizePosition = {
+
+type PrizePosition = {
+  registered_users: number;
   position: string;
   prize_money: number;
   user_number: number;
@@ -224,14 +227,18 @@ const ChallengeManagement = () => {
   type ApiResponse = {
     [key: string]: Challenge[]; // keys are strings, values are arrays of Challenge
   };
-
-  const flattenChallenges = (apiResponse: ApiResponse) => {
+  useEffect(() => {
+    console.log("Challenges fetched:", challenges);
+  }, [challenges]);
+  const flattenChallenges = (apiResponse: ApiResponse): Challenge[] => {
     const flattened: Challenge[] = [];
+
     for (const key in apiResponse) {
       if (Array.isArray(apiResponse[key])) {
         flattened.push(...apiResponse[key]);
       }
     }
+
     return flattened;
   };
 
@@ -240,6 +247,7 @@ const ChallengeManagement = () => {
     try {
       const response = await fetch(`${baseUrl}/api/challenges/all-challenges`);
       const data = await response.json();
+      console.log("API Response:", data); // 👈 DEBUG HERE
       if (response.ok) {
         setChallenges(flattenChallenges(data));
         setError("");
@@ -450,7 +458,7 @@ const ChallengeManagement = () => {
       !formData.end_datetime ||
       formData.total_marks === "" ||
       formData.total_seats === "" ||
-      formData.questionIds.length === 0 || // Questions are required
+      // formData.questionIds.length === 0 || // Questions are required
       formData.prizeDetailsId === "" || // Prize details required
       formData.challengeRequirementId === "" || // Challenge requirement required
       formData.ruleId === "" || // Rule required
@@ -580,6 +588,7 @@ const ChallengeManagement = () => {
   };
 
   const updateChallenge = async () => {
+    console.log(selectedChallenge);
     if (!selectedChallenge?.id) {
       setError("No challenge selected for update.");
       return;
@@ -594,12 +603,13 @@ const ChallengeManagement = () => {
       !formData.end_datetime ||
       formData.total_marks === "" ||
       formData.total_seats === "" ||
-      formData.questionIds.length === 0 ||
+      // formData.questionIds.length === 0 ||
       formData.prizeDetailsId === "" ||
       formData.challengeRequirementId === "" ||
       formData.ruleId === "" ||
       (formData.challenge_type === "special_event" && formData.eventId === "")
     ) {
+      setIsQuestionSelectorOpen(false);
       setError("Please fill in all required fields.");
       return;
     }
@@ -695,6 +705,7 @@ const ChallengeManagement = () => {
           eventId: "",
         });
         setSelectedQuestionsDetails([]);
+        setIsQuestionSelectorOpen(false);
         fetchChallenges(); // refresh list
       } else {
         setError(data.message || "Failed to update challenge");
@@ -740,6 +751,8 @@ const ChallengeManagement = () => {
 
   // MODIFIED: Handle edit to populate `selectedQuestionsDetails`
   const handleEdit = async (challenge: Challenge) => {
+    console.log("Editing challenge:", challenge);
+
     try {
       setSelectedChallenge(challenge);
 
@@ -792,6 +805,69 @@ const ChallengeManagement = () => {
 
       setSelectedQuestionsDetails(preselectedQuestions);
       setShowEditModal(true);
+      setError("");
+    } catch (err) {
+      console.error("Error in handleEdit:", err);
+      setError("Failed to load challenge for editing.");
+    }
+  };
+
+  //When Questions added directly
+
+  const directQuestionsEdit = async (challenge: Challenge) => {
+    try {
+      setSelectedChallenge(challenge);
+
+      // Preload dropdowns
+      await Promise.all([
+        fetchPrizeDetails(),
+        fetchChallengeRequirements(),
+        fetchRules(),
+        fetchEvents(),
+      ]);
+
+      // 🔽 Fetch preselected questions
+      const res = await fetch(
+        `${baseUrl}/api/challenges/${challenge.id}/questions`
+      );
+      const data = await res.json();
+      const preselectedQuestions = data.data || [];
+
+      // 🔁 Set form data
+      setFormData({
+        challenge_type: challenge.challenge_type,
+        fee: challenge.fee,
+        deadlineDate: challenge.deadline?.split("T")[0] || "",
+        deadlineTime: challenge.deadline?.split("T")[1]?.substring(0, 5) || "",
+        deadline: challenge.deadline,
+
+        quiz_time: challenge.quiz_time,
+        active_status: challenge.active_status,
+        event_code: challenge.event_code || "",
+
+        start_datetime_date: challenge.start_datetime?.split("T")[0] || "",
+        start_datetime_time:
+          challenge.start_datetime?.split("T")[1]?.substring(0, 5) || "",
+        start_datetime: challenge.start_datetime,
+
+        end_datetime_date: challenge.end_datetime?.split("T")[0] || "",
+        end_datetime_time:
+          challenge.end_datetime?.split("T")[1]?.substring(0, 5) || "",
+        end_datetime: challenge.end_datetime,
+
+        total_marks: challenge.total_marks,
+        total_seats: challenge.total_seats,
+
+        questionIds: preselectedQuestions.map((q: Question) => q.id),
+        prizeDetailsId: challenge.prizeDetails?.[0]?.id ?? "",
+        challengeRequirementId: challenge.requirements?.id ?? "",
+        ruleId: challenge.rules?.id ?? "",
+        eventId: challenge.specialEventDetails?.id ?? "",
+      });
+
+      setSelectedQuestionsDetails(preselectedQuestions);
+      //setShowEditModal(true);
+      setIsQuestionSelectorOpen(true); // Open the QuestionSelector directly
       setError("");
     } catch (err) {
       console.error("Error in handleEdit:", err);
@@ -903,6 +979,9 @@ const ChallengeManagement = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Active
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Upload Questions
+                </th>
                 <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
@@ -929,74 +1008,88 @@ const ChallengeManagement = () => {
                 </tr>
               ) : (
                 challenges &&
-                challenges.map((challenge: Challenge) => (
-                  <tr key={challenge.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {challenge.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {challenge.challenge_type}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {challenge.specialEventDetails?.title || "N/A"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ৳ {challenge.fee}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {challenge.quiz_time}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(challenge.start_datetime).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(challenge.end_datetime).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {challenge.available_seats}/{challenge.total_seats}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      {challenge.active_status ? (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                          Inactive
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={() =>
-                            router.push(`/challengeResult/${challenge.id}`)
-                          }
-                          className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors"
-                          title="View Challenge Result"
-                        >
-                          <Eye size={20} />
-                        </button>
+                challenges
+                  .sort((a, b) => b.id - a.id)
+                  .map((challenge: Challenge) => (
+                    <tr key={challenge.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {challenge.id}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {challenge.challenge_type}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {challenge.specialEventDetails?.title || "N/A"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ৳ {challenge.fee}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {challenge.quiz_time}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(
+                          challenge.start_datetime
+                        ).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(challenge.end_datetime).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {challenge.available_seats}/{challenge.total_seats}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {challenge.active_status ? (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            Inactive
+                          </span>
+                        )}
+                      </td>
 
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <button
-                          onClick={() => handleEdit(challenge)}
-                          className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors"
-                          title="Edit Challenge"
+                          className="cursor-pointer"
+                          onClick={() => directQuestionsEdit(challenge)}
                         >
-                          <Edit size={16} />
+                          <BsFillCloudUploadFill className="text-xl" />
                         </button>
+                      </td>
 
-                        <button
-                          onClick={() => handleDelete(challenge)}
-                          className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
-                          title="Delete Challenge"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={() =>
+                              router.push(`/challengeResult/${challenge.id}`)
+                            }
+                            className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors cursor-pointer"
+                            title="View Challenge Result"
+                          >
+                            <Eye size={20} />
+                          </button>
+
+                          <button
+                            onClick={() => handleEdit(challenge)}
+                            className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors cursor-pointer"
+                            title="Edit Challenge"
+                          >
+                            <Edit size={16} />
+                          </button>
+
+                          <button
+                            onClick={() => handleDelete(challenge)}
+                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors cursor-pointer"
+                            title="Delete Challenge"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
               )}
             </tbody>
           </table>
@@ -1271,11 +1364,11 @@ const ChallengeManagement = () => {
                     </div>
                   )}
 
-                  {formData.questionIds.length === 0 && (
+                  {/* {formData.questionIds.length === 0 && (
                     <p className="text-red-500 text-sm mt-2">
                       Please select at least one question.
                     </p>
-                  )}
+                  )} */}
                 </div>
                 <div>
                   <label
@@ -1842,6 +1935,67 @@ const ChallengeManagement = () => {
               <div className="p-6 border-t flex gap-3 justify-end">
                 <button
                   onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={updateChallenge}
+                  disabled={loading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {loading ? "Updating..." : "Update"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Direct Questions Edit Modal */}
+        {isQuestionSelectorOpen && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[90vh] overflow-hidden flex flex-col">
+              {/* Header */}
+              <div className="flex justify-between items-center p-4 border-b">
+                <h2 className="text-xl font-semibold">Select Questions</h2>
+                <button
+                  onClick={() => setIsQuestionSelectorOpen(false)}
+                  className="text-gray-500 hover:text-gray-800 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {/* Selected Questions */}
+              {selectedQuestionsDetails.length > 0 && (
+                <div className="flex flex-wrap gap-2 p-4 border-b max-h-32 overflow-y-auto">
+                  {selectedQuestionsDetails.map((q) => (
+                    <span
+                      key={q.id}
+                      className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+                    >
+                      {q.question.substring(0, 30)}...
+                      <button
+                        type="button"
+                        className="text-blue-600 hover:text-blue-800 ml-1"
+                        onClick={() => handleRemoveSelectedQuestion(q.id)}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {/* Body */}
+              <div className="flex-grow overflow-y-auto p-4">
+                <QuestionSelector onSelect={handleQuestionsSelected} />
+              </div>
+
+              {/* Footer */}
+              <div className="p-4 border-t flex gap-3 justify-end">
+                <button
+                  onClick={() => setIsQuestionSelectorOpen(false)}
                   className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
                 >
                   Cancel
