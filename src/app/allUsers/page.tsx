@@ -46,6 +46,9 @@ export default function Dashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [resultLoading, setResultLoading] = useState(false);
   const [resultError, setResultError] = useState<string | null>(null);
+  const [expandedChallenges, setExpandedChallenges] = useState<
+    Record<string, boolean>
+  >({});
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -204,6 +207,12 @@ export default function Dashboard() {
       workbook,
       `User-${user.full_name.replace(/\s+/g, "_")}.xlsx`
     );
+  };
+  const toggleChallenge = (key: string) => {
+    setExpandedChallenges((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
   };
 
   return (
@@ -412,50 +421,93 @@ export default function Dashboard() {
                       "special_event",
                       "practice",
                     ].map((key) => (
-                      <div key={key}>
-                        <h3 className="text-lg font-bold capitalize mb-2">
-                          {key.replace("_", " ")} Challenges
-                        </h3>
-                        {userResults[key]?.length > 0 ? (
-                          <div className="overflow-auto">
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>Challenge ID</TableHead>
-                                  <TableHead>Score</TableHead>
-                                  <TableHead>Correct</TableHead>
-                                  <TableHead>Position</TableHead>
-                                  <TableHead>Prize</TableHead>
-                                  <TableHead>Date</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {userResults[key].map((item: any) => (
-                                  <TableRow key={item.challenge_id}>
-                                    <TableCell>{item.challenge_id}</TableCell>
-                                    <TableCell>{item.score}</TableCell>
-                                    <TableCell>
-                                      {item.correct_answers}
-                                    </TableCell>
-                                    <TableCell>
-                                      {item.position || "-"}
-                                    </TableCell>
-                                    <TableCell>{item.prize_money}</TableCell>
-                                    <TableCell>
-                                      {new Date(
-                                        item.createdAt
-                                      ).toLocaleDateString()}
-                                    </TableCell>
+                      <div
+                        key={key}
+                        className="border border-gray-300 rounded-md shadow-sm bg-white"
+                      >
+                        <button
+                          onClick={() => toggleChallenge(key)}
+                          className="w-full flex justify-between items-center px-5 py-3 text-lg font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-t-md"
+                          aria-expanded={
+                            expandedChallenges[key] ? "true" : "false"
+                          }
+                          aria-controls={`${key}-content`}
+                          id={`${key}-header`}
+                        >
+                          <span className="capitalize">
+                            {key.replace("_", " ")} Challenges
+                          </span>
+                          <svg
+                            className={`w-5 h-5 text-purple-600 transform transition-transform duration-300 ${
+                              expandedChallenges[key]
+                                ? "rotate-180"
+                                : "rotate-0"
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                            aria-hidden="true"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </button>
+
+                        <div
+                          id={`${key}-content`}
+                          role="region"
+                          aria-labelledby={`${key}-header`}
+                          className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                            expandedChallenges[key]
+                              ? "max-h-[500px] p-4"
+                              : "max-h-0 px-5"
+                          }`}
+                        >
+                          {userResults[key]?.length > 0 ? (
+                            <div className="overflow-auto max-h-80">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Challenge ID</TableHead>
+                                    <TableHead>Score</TableHead>
+                                    <TableHead>Correct</TableHead>
+                                    <TableHead>Position</TableHead>
+                                    <TableHead>Prize</TableHead>
+                                    <TableHead>Date</TableHead>
                                   </TableRow>
-                                ))}
-                              </TableBody>
-                            </Table>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-gray-500">
-                            No {key} challenge data available.
-                          </p>
-                        )}
+                                </TableHeader>
+                                <TableBody>
+                                  {userResults[key].map((item: any) => (
+                                    <TableRow key={item.challenge_id}>
+                                      <TableCell>{item.challenge_id}</TableCell>
+                                      <TableCell>{item.score}</TableCell>
+                                      <TableCell>
+                                        {item.correct_answers}
+                                      </TableCell>
+                                      <TableCell>
+                                        {item.position || "-"}
+                                      </TableCell>
+                                      <TableCell>{item.prize_money}</TableCell>
+                                      <TableCell>
+                                        {new Date(
+                                          item.createdAt
+                                        ).toLocaleDateString()}
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500 italic">
+                              No {key} challenge data available.
+                            </p>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
