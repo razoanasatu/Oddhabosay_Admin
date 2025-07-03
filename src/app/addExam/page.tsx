@@ -440,12 +440,26 @@ const ChallengeManagement = () => {
 
   // NEW: Function to handle the selection from QuestionSelector
   const handleQuestionsSelected = (selectedQs: Question[]) => {
-    setSelectedQuestionsDetails(selectedQs);
+    // Merge without duplicates
+    const merged = [
+      ...selectedQuestionsDetails,
+      ...selectedQs.filter(
+        (newQ) =>
+          !selectedQuestionsDetails.some(
+            (existingQ) => existingQ.id === newQ.id
+          )
+      ),
+    ];
+
+    setSelectedQuestionsDetails(merged);
+
     setFormData((prev) => ({
       ...prev,
-      questionIds: selectedQs.map((q) => q.id),
+      questionIds: merged.map((q) => q.id),
     }));
-    setIsQuestionSelectorOpen(false); // Close the selector
+
+    setIsQuestionSelectorOpen(false);
+
     if (!showEditModal) setIsEditModalOpen(true);
   };
 
