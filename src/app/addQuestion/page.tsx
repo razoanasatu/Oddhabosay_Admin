@@ -180,12 +180,16 @@ const QuestionManagement = () => {
           subjects.find(
             (s) => s.name.toLowerCase() === row.subject?.toLowerCase()
           )?.id || -1,
-        eligibility_flag: row.exam_type
-          ? row.exam_type
-              .split(",")
-              .map((flag: string) => flag.trim())
-              .filter((flag: string) => flag) // remove empty strings
-          : ["practice"],
+        eligibility_flag: Array.from(
+          new Set(
+            row.exam_type
+              ? row.exam_type
+                  .split(",")
+                  .map((flag: string) => flag.trim())
+                  .filter(Boolean)
+              : ["practice"]
+          )
+        ),
         score: Number(row.score),
       }));
 
