@@ -17,7 +17,7 @@ type PrizePosition = {
 };
 
 export type PrizeDetails = {
-  prize_structure: Record<string, PrizePosition[]>;
+  prize_structure: PrizePosition[];
   global_board: boolean;
   id: number;
   monthly_eligibility: number;
@@ -230,12 +230,19 @@ const ChallengeManagement = () => {
   useEffect(() => {
     console.log("Challenges fetched:", challenges);
   }, [challenges]);
+
   const flattenChallenges = (apiResponse: ApiResponse): Challenge[] => {
     const flattened: Challenge[] = [];
 
     for (const key in apiResponse) {
       if (Array.isArray(apiResponse[key])) {
-        flattened.push(...apiResponse[key]);
+        apiResponse[key].forEach((item) => {
+          const challenge: Challenge = {
+            ...item,
+            prizeDetails: item.prizeDetails ?? [], // explicitly ensure this exists
+          };
+          flattened.push(challenge);
+        });
       }
     }
 
@@ -247,9 +254,12 @@ const ChallengeManagement = () => {
     try {
       const response = await fetch(`${baseUrl}/api/challenges/all-challenges`);
       const data = await response.json();
-      console.log("API Response:", data); // 👈 DEBUG HERE
+      console.log("Raw API response:", data);
+
       if (response.ok) {
-        setChallenges(flattenChallenges(data));
+        const flattened = flattenChallenges(data);
+        console.log("Flattened challenges:", flattened); // 👀 Check prizeDetails here
+        setChallenges(flattened);
         setError("");
       } else {
         setError("Failed to fetch challenges");
