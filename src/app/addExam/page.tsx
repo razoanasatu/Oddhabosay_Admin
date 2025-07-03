@@ -168,6 +168,8 @@ const ChallengeManagement = () => {
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(
     null
   );
+  //for direct edit
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [formData, setFormData] = useState<ChallengeFormData>({
     challenge_type: "",
     fee: "",
@@ -444,6 +446,7 @@ const ChallengeManagement = () => {
       questionIds: selectedQs.map((q) => q.id),
     }));
     setIsQuestionSelectorOpen(false); // Close the selector
+    if (!showEditModal) setIsEditModalOpen(true);
   };
 
   // MODIFIED: Function to remove a selected question from the tags
@@ -716,6 +719,7 @@ const ChallengeManagement = () => {
         });
         setSelectedQuestionsDetails([]);
         setIsQuestionSelectorOpen(false);
+        setIsEditModalOpen(false);
         fetchChallenges(); // refresh list
       } else {
         setError(data.message || "Failed to update challenge");
@@ -933,6 +937,8 @@ const ChallengeManagement = () => {
     fetchRules();
     fetchEvents(); // Fetch events on component mount
   }, []);
+
+  useEffect(() => {}, [showEditModal]);
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
@@ -2001,19 +2007,64 @@ const ChallengeManagement = () => {
               <div className="flex-grow overflow-y-auto p-4">
                 <QuestionSelector onSelect={handleQuestionsSelected} />
               </div>
+            </div>
+          </div>
+        )}
 
-              {/* Footer */}
+        {/* Step 2: Edit Modal with Selected Questions */}
+        {isEditModalOpen && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl h-[80vh] overflow-hidden flex flex-col">
+              <div className="flex justify-between items-center p-4 border-b">
+                <h2 className="text-xl font-semibold">Edit Challenge</h2>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="text-gray-500 hover:text-gray-800 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div className="flex-grow overflow-y-auto p-4">
+                {selectedQuestionsDetails.length === 0 ? (
+                  <p className="text-gray-500">No questions selected.</p>
+                ) : (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-gray-700">
+                      Selected Questions:
+                    </h3>
+                    <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto">
+                      {selectedQuestionsDetails.map((q) => (
+                        <span
+                          key={q.id}
+                          className="flex items-center gap-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm"
+                        >
+                          {q.question.substring(0, 30)}...
+                          <button
+                            type="button"
+                            className="text-blue-600 hover:text-blue-800 ml-1"
+                            onClick={() => handleRemoveSelectedQuestion(q.id)}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="p-4 border-t flex gap-3 justify-end">
                 <button
-                  onClick={() => setIsQuestionSelectorOpen(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={updateChallenge}
                   disabled={loading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
                   {loading ? "Updating..." : "Update"}
                 </button>
