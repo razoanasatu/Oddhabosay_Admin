@@ -284,67 +284,67 @@ const ChallengeManagement = () => {
     }
   };
 
-  const handleExcelUpload = async (
-    e: React.ChangeEvent<HTMLInputElement>,
-    challenge_type: string
-  ) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // const handleExcelUpload = async (
+  //   e: React.ChangeEvent<HTMLInputElement>,
+  //   challenge_type: string
+  // ) => {
+  //   const file = e.target.files?.[0];
+  //   if (!file) return;
 
-    const reader = new FileReader();
+  //   const reader = new FileReader();
 
-    reader.onload = async (event) => {
-      const arrayBuffer = event.target?.result as ArrayBuffer;
-      const workbook = XLSX.read(arrayBuffer, { type: "array" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+  //   reader.onload = async (event) => {
+  //     const arrayBuffer = event.target?.result as ArrayBuffer;
+  //     const workbook = XLSX.read(arrayBuffer, { type: "array" });
+  //     const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  //     const jsonData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-      const formattedQuestions = jsonData.map((row) => ({
-        question: row.question,
-        answers: [row.option1, row.option2, row.option3, row.option4],
-        correct_answer: Number(row.correct_answer),
-        subjectId:
-          subjects.find(
-            (s) => s.name.toLowerCase() === row.subject?.toLowerCase()
-          )?.id || -1,
-        eligibility_flag: Array.from(
-          new Set(
-            row.exam_type
-              ? row.exam_type
-                  .split(",")
-                  .map((flag: string) => flag.trim())
-                  .filter(Boolean)
-                  .concat(challenge_type) // ensure challenge_type is included
-              : [challenge_type]
-          )
-        ),
-      }));
+  //     const formattedQuestions = jsonData.map((row) => ({
+  //       question: row.question,
+  //       answers: [row.option1, row.option2, row.option3, row.option4],
+  //       correct_answer: Number(row.correct_answer),
+  //       subjectId:
+  //         subjects.find(
+  //           (s) => s.name.toLowerCase() === row.subject?.toLowerCase()
+  //         )?.id || -1,
+  //       eligibility_flag: Array.from(
+  //         new Set(
+  //           row.exam_type
+  //             ? row.exam_type
+  //                 .split(",")
+  //                 .map((flag: string) => flag.trim())
+  //                 .filter(Boolean)
+  //                 .concat(challenge_type) // ensure challenge_type is included
+  //             : [challenge_type]
+  //         )
+  //       ),
+  //     }));
 
-      try {
-        setLoading(true);
-        const res = await fetch(`${baseUrl}/api/question-bank/add-multiple`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formattedQuestions),
-        });
+  //     try {
+  //       setLoading(true);
+  //       const res = await fetch(`${baseUrl}/api/question-bank/add-multiple`, {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify(formattedQuestions),
+  //       });
 
-        const json = await res.json();
-        if (res.ok && json.success) {
-          fetchQuestions(); // Refresh question list
-          alert("Questions uploaded successfully!");
-        } else {
-          setError(json.message || "Bulk upload failed.");
-        }
-      } catch (err) {
-        console.error("Upload error:", err);
-        setError("Failed to upload questions.");
-      } finally {
-        setLoading(false);
-      }
-    };
+  //       const json = await res.json();
+  //       if (res.ok && json.success) {
+  //         fetchQuestions(); // Refresh question list
+  //         alert("Questions uploaded successfully!");
+  //       } else {
+  //         setError(json.message || "Bulk upload failed.");
+  //       }
+  //     } catch (err) {
+  //       console.error("Upload error:", err);
+  //       setError("Failed to upload questions.");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
 
-    reader.readAsArrayBuffer(file); // ✅ Modern and supported
-  };
+  //   reader.readAsArrayBuffer(file); // ✅ Modern and supported
+  // };
 
   const fetchChallenges = async () => {
     setLoading(true);
@@ -2114,7 +2114,7 @@ const ChallengeManagement = () => {
 
               {/* Body */}
               <div className="flex-grow overflow-y-auto p-4 space-y-4">
-                {/* Excel Upload Section */}
+                {/* Excel Upload Section
                 <div className="flex items-center gap-3">
                   <label
                     htmlFor="excel-upload"
@@ -2134,7 +2134,7 @@ const ChallengeManagement = () => {
                   {loading && (
                     <span className="text-blue-600 text-sm">Uploading...</span>
                   )}
-                </div>
+                </div> */}
 
                 {/* Question Selector */}
                 <QuestionSelector onSelect={handleQuestionsSelected} />
