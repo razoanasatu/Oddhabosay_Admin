@@ -5,6 +5,7 @@ import { Edit, Eye, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BsFillCloudUploadFill } from "react-icons/bs";
+import * as XLSX from "xlsx";
 //import QuestionSelector from "../questionSelection/QuestionSelector";
 // Define Challenge types based on your API response
 
@@ -55,6 +56,11 @@ export type SpecialEventDetails = {
   title: string;
   content: string;
   image: string;
+};
+
+type Subject = {
+  id: number;
+  name: string;
 };
 
 export type Question = {
@@ -168,6 +174,7 @@ const ChallengeManagement = () => {
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(
     null
   );
+
   //for direct edit
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [formData, setFormData] = useState<ChallengeFormData>({
@@ -208,6 +215,7 @@ const ChallengeManagement = () => {
   // If not, you can remove `setQuestions` and related `fetchQuestions` call from useEffect.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [questions, setQuestions] = useState<Question[]>([]); // Still needed if you fetch all questions, otherwise can be removed.
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const router = useRouter();
 
   const [prizeDetailsOptions, setPrizeDetailsOptions] = useState<
@@ -249,6 +257,89 @@ const ChallengeManagement = () => {
     }
 
     return flattened;
+  };
+
+  //fetching subjects
+
+  const fetchSubjects = async () => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${baseUrl}/api/subjects`);
+      const json = await res.json();
+
+      if (res.ok && json.success) {
+        // Extract only subject IDs and names
+        const subjectList = json.data.map((subject: any) => ({
+          id: subject.id,
+          name: subject.name,
+        }));
+        setSubjects(subjectList);
+      } else {
+        console.error("Failed to fetch subjects:", json.message);
+      }
+    } catch (err) {
+      console.error("Error fetching subjects:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExcelUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    challenge_type: string
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = async (event) => {
+      const arrayBuffer = event.target?.result as ArrayBuffer;
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+      const formattedQuestions = jsonData.map((row) => ({
+        question: row.question,
+        answers: [row.option1, row.option2, row.option3, row.option4],
+        correct_answer: Number(row.correct_answer),
+        subjectId:
+          subjects.find(
+            (s) => s.name.toLowerCase() === row.subject?.toLowerCase()
+          )?.id || -1,
+        eligibility_flag: row.exam_type
+          ? row.exam_type
+              .split(",")
+              .map((flag: string) => flag.trim())
+              .filter((flag: string) => flag) // remove empty strings
+          : [],
+        score: Number(row.score),
+      }));
+
+      try {
+        setLoading(true);
+        const res = await fetch(`${baseUrl}/api/question-bank/add-multiple`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formattedQuestions),
+        });
+
+        const json = await res.json();
+        if (res.ok && json.success) {
+          fetchQuestions(); // Refresh question list
+          alert("Questions uploaded successfully!");
+        } else {
+          setError(json.message || "Bulk upload failed.");
+        }
+      } catch (err) {
+        console.error("Upload error:", err);
+        setError("Failed to upload questions.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    reader.readAsArrayBuffer(file); // ✅ Modern and supported
   };
 
   const fetchChallenges = async () => {
@@ -841,7 +932,6 @@ const ChallengeManagement = () => {
   };
 
   //When Questions added directly
-
   const directQuestionsEdit = async (challenge: Challenge) => {
     try {
       setSelectedChallenge(challenge);
@@ -950,6 +1040,7 @@ const ChallengeManagement = () => {
     fetchChallengeRequirements();
     fetchRules();
     fetchEvents(); // Fetch events on component mount
+    fetchSubjects();
   }, []);
 
   useEffect(() => {}, [showEditModal]);
@@ -2018,7 +2109,30 @@ const ChallengeManagement = () => {
               )}
 
               {/* Body */}
-              <div className="flex-grow overflow-y-auto p-4">
+              <div className="flex-grow overflow-y-auto p-4 space-y-4">
+                {/* Excel Upload Section */}
+                <div className="flex items-center gap-3">
+                  <label
+                    htmlFor="excel-upload"
+                    className="bg-green-600 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-green-700 transition"
+                  >
+                    Upload from Excel
+                  </label>
+                  <input
+                    id="excel-upload"
+                    type="file"
+                    accept=".xlsx, .xls"
+                    onChange={(e) =>
+                      handleExcelUpload(e, formData.challenge_type)
+                    }
+                    className="hidden"
+                  />
+                  {loading && (
+                    <span className="text-blue-600 text-sm">Uploading...</span>
+                  )}
+                </div>
+
+                {/* Question Selector */}
                 <QuestionSelector onSelect={handleQuestionsSelected} />
               </div>
             </div>
