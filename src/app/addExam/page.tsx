@@ -5,7 +5,6 @@ import { Edit, Eye, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BsFillCloudUploadFill } from "react-icons/bs";
-import * as XLSX from "xlsx";
 //import QuestionSelector from "../questionSelection/QuestionSelector";
 // Define Challenge types based on your API response
 
