@@ -18,15 +18,10 @@ const ChallengeRequirementManagement = () => {
   const [requirements, setRequirements] = useState<ChallengeRequirement[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState<Omit<ChallengeRequirement, "id">>({
-    number_of_practice_challenges: 5,
-    number_of_weekly_challenges: 3,
-    number_of_monthly_challenges: 2,
-    number_of_mega_challenges: 1,
-    number_of_special_event_challenges: 1,
-    number_of_practice_questions_solved: 100,
-  });
-
+  const [formData, setFormData] = useState<Omit<
+    ChallengeRequirement,
+    "id"
+  > | null>(null);
   const [selected, setSelected] = useState<ChallengeRequirement | null>(null);
   const [showFormModal, setShowFormModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -54,27 +49,22 @@ const ChallengeRequirementManagement = () => {
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!formData) return;
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: Number(value),
-    }));
+    setFormData((prev) => (prev ? { ...prev, [name]: Number(value) } : null));
   };
 
   const resetForm = () => {
-    setFormData({
-      number_of_practice_challenges: 5,
-      number_of_weekly_challenges: 3,
-      number_of_monthly_challenges: 2,
-      number_of_mega_challenges: 1,
-      number_of_special_event_challenges: 1,
-      number_of_practice_questions_solved: 100,
-    });
+    setFormData(null);
     setSelected(null);
     setError("");
   };
 
   const handleSubmit = async () => {
+    if (!formData) {
+      setError("Form is incomplete.");
+      return;
+    }
     try {
       const endpoint = selected
         ? `${baseUrl}/api/challenge-requirement/${selected.id}`
@@ -124,16 +114,27 @@ const ChallengeRequirementManagement = () => {
     }
   };
 
+  const openCreateForm = () => {
+    setFormData({
+      number_of_practice_challenges: 0,
+      number_of_weekly_challenges: 0,
+      number_of_monthly_challenges: 0,
+      number_of_mega_challenges: 0,
+      number_of_special_event_challenges: 0,
+      number_of_practice_questions_solved: 0,
+    });
+    setSelected(null);
+    setError("");
+    setShowFormModal(true);
+  };
+
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Challenge Requirements</h1>
         <button
-          onClick={() => {
-            resetForm();
-            setShowFormModal(true);
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-blue-700"
+          onClick={openCreateForm}
+          className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
         >
           <Plus size={18} /> Add Requirement
         </button>
@@ -150,7 +151,6 @@ const ChallengeRequirementManagement = () => {
               <th className="p-3 text-sm font-semibold text-left">
                 Practice Qs Solved
               </th>
-
               <th className="p-3 text-sm font-semibold text-left">Practice</th>
               <th className="p-3 text-sm font-semibold text-left">Weekly</th>
               <th className="p-3 text-sm font-semibold text-left">Monthly</th>
@@ -162,13 +162,13 @@ const ChallengeRequirementManagement = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="text-center py-4">
+                <td colSpan={8} className="text-center py-4">
                   Loading...
                 </td>
               </tr>
             ) : requirements.length === 0 ? (
               <tr>
-                <td colSpan={7} className="text-center py-4">
+                <td colSpan={8} className="text-center py-4">
                   No requirements found.
                 </td>
               </tr>
@@ -190,7 +190,8 @@ const ChallengeRequirementManagement = () => {
                     <button
                       onClick={() => {
                         setSelected(r);
-                        setFormData({ ...r });
+                        const { id, createdAt, updatedAt, ...rest } = r as any;
+                        setFormData(rest);
                         setShowFormModal(true);
                       }}
                       className="text-blue-600 hover:text-blue-800 mr-2"
@@ -227,35 +228,43 @@ const ChallengeRequirementManagement = () => {
               </button>
             </div>
 
-            {Object.entries(formData).map(([key, value]) => (
-              <div key={key} className="flex flex-col">
-                <label className="text-sm font-medium text-gray-700 capitalize">
-                  {key.replace(/_/g, " ")}
-                </label>
-                <input
-                  type="number"
-                  name={key}
-                  value={value}
-                  onChange={handleChange}
-                  className="border px-3 py-2 rounded"
-                />
-              </div>
-            ))}
+            {formData ? (
+              <>
+                {Object.entries(formData).map(([key, value]) => (
+                  <div key={key} className="flex flex-col">
+                    <label className="text-sm font-medium text-gray-700 capitalize">
+                      {key.replace(/_/g, " ")}
+                    </label>
+                    <input
+                      type="text"
+                      name={key}
+                      value={value}
+                      onChange={handleChange}
+                      className="border px-3 py-2 rounded appearance-none"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                    />
+                  </div>
+                ))}
 
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowFormModal(false)}
-                className="px-4 py-2 border rounded"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                {selected ? "Update" : "Save"}
-              </button>
-            </div>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowFormModal(false)}
+                    className="px-4 py-2 border rounded"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                  >
+                    {selected ? "Update" : "Save"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <p className="text-center text-gray-500">Loading form...</p>
+            )}
           </div>
         </div>
       )}
