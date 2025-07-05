@@ -458,7 +458,7 @@ export default function Dashboard() {
               ✕
             </button>
 
-            <h2 className="text-2xl font-semibold mb-4 text-center">
+            <h2 className="text-2xl font-semibold mb-4 text-center text-purple-900">
               User Challenge Details
             </h2>
 
@@ -470,10 +470,12 @@ export default function Dashboard() {
               <>
                 {userStats && (
                   <div className="mt-8 mb-8">
-                    <h3 className="text-lg font-bold mb-4">User Stats</h3>
+                    <h3 className="text-lg font-bold mb-4 text-purple-900">
+                      User Stats
+                    </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
                       <div className="bg-white rounded shadow p-4 flex flex-col items-center">
-                        <h4 className="text-center font-semibold mb-2">
+                        <h4 className="text-center font-semibold mb-2 text-purple-900">
                           Practice Stats
                         </h4>
                         <div className="w-64">
@@ -484,7 +486,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <div className="bg-white rounded shadow p-4 flex flex-col items-center">
-                        <h4 className="text-center font-semibold mb-2">
+                        <h4 className="text-center font-semibold mb-2 text-purple-900 ">
                           Exam Stats
                         </h4>
                         <div className="w-64">
@@ -496,21 +498,26 @@ export default function Dashboard() {
                 )}
 
                 {userResults && (
-                  <div className="space-y-4 mb-8">
+                  <div className="space-y-6 mb-10">
+                    <h3 className="text-2xl font-bold text-purple-900">
+                      Challenge History
+                    </h3>
+
                     {[
                       "weekly",
                       "monthly",
                       "mega",
-                      "special_event",
+
                       "practice",
+                      "special_event",
                     ].map((key) => (
                       <div
                         key={key}
-                        className="border border-gray-300 rounded-md shadow-sm bg-white"
+                        className="border border--200 rounded-lg shadow-sm bg-white"
                       >
                         <button
                           onClick={() => toggleChallenge(key)}
-                          className="w-full flex justify-between items-center px-5 py-3 text-lg font-semibold text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 rounded-t-md"
+                          className="w-full flex justify-between items-center px-5 py-4 text-lg font-semibold text-purple-800 bg-white-500 hover:bg-purple-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 rounded-t-lg transition"
                           aria-expanded={
                             expandedChallenges[key] ? "true" : "false"
                           }
@@ -546,12 +553,12 @@ export default function Dashboard() {
                           aria-labelledby={`${key}-header`}
                           className={`overflow-hidden transition-all duration-300 ease-in-out ${
                             expandedChallenges[key]
-                              ? "max-h-[500px] p-4"
+                              ? "max-h-[600px] p-4"
                               : "max-h-0 px-5"
                           }`}
                         >
                           {userResults[key]?.length > 0 ? (
-                            <div className="overflow-auto max-h-80">
+                            <div className="overflow-x-auto max-h-80 scrollbar-thin scrollbar-thumb-gray-300">
                               <Table>
                                 <TableHeader>
                                   <TableRow>
@@ -586,8 +593,9 @@ export default function Dashboard() {
                               </Table>
                             </div>
                           ) : (
-                            <p className="text-sm text-gray-500 italic">
-                              No {key} challenge data available.
+                            <p className="text-sm text-gray-400 italic px-4 py-2">
+                              No {key.replace("_", " ")} challenge data
+                              available.
                             </p>
                           )}
                         </div>
