@@ -2,8 +2,9 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import AdminLayout from "../../components/AdminLayout";
-
 function getCookie(name: string) {
   const value = `; ${document.cookie}`;
   const parts = value.split(`; ${name}=`);
@@ -53,11 +54,43 @@ export default function ClientLayoutWrapper({
     );
   }
 
-  // Public pages: don't wrap in AdminLayout
+  // Public pages: don't wrap in AdminLayout, but still include ToastContainer
   if (pathname === "/signIn" || pathname === "/signUp") {
-    return <>{children}</>;
+    return (
+      <>
+        {children}
+        <ToastContainer
+          position="top-center"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
+      </>
+    );
   }
 
   // Authenticated pages: wrap in AdminLayout
-  return <AdminLayout>{children}</AdminLayout>;
+  return (
+    <>
+      <AdminLayout>{children}</AdminLayout>
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
+    </>
+  );
 }

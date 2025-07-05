@@ -23,6 +23,7 @@ import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Bell, ChevronsLeft, ChevronsRight, Eye, Search } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Pie } from "react-chartjs-2";
+import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
 ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels);
 
@@ -43,6 +44,10 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const [notificationModalOpen, setNotificationModalOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [customMessage, setCustomMessage] = useState("");
 
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [userResults, setUserResults] = useState<any | null>(null);
@@ -154,22 +159,22 @@ export default function Dashboard() {
     }
   };
 
-  const sendNotificationToUser = async (userId: number) => {
+  const sendNotificationToUser = async (userId: number, message: string) => {
     try {
       const res = await fetch(`${baseUrl}/api/notifications`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userId: userId, // User ID dynamically passed
-          message: "This is a test from Anik.", // Specific message payload
+          userId, // User ID dynamically passed
+          message, // Specific message payload
         }),
       });
 
       if (!res.ok) throw new Error("Failed to send notification");
 
-      alert("Notification sent to user.");
+      toast.success(" Notification sent to user");
     } catch (error) {
-      alert((error as Error).message || "An error occurred.");
+      toast.error("❌ " + ((error as Error).message || "Something went wrong"));
     }
   };
 
@@ -395,7 +400,10 @@ export default function Dashboard() {
                             size="sm"
                             className="rounded-md border border-purple-500 text-purple-500 hover:bg-purple-100"
                             title="Send Notification"
-                            onClick={() => sendNotificationToUser(user.id)}
+                            onClick={() => {
+                              setCurrentUserId(user.id);
+                              setNotificationModalOpen(true);
+                            }}
                           >
                             <Bell className="w-4 h-4" />
                           </Button>
@@ -449,6 +457,54 @@ export default function Dashboard() {
           Next <ChevronsRight className="w-4 h-4" />
         </Button>
       </div>
+
+      {notificationModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-black"
+              onClick={() => setNotificationModalOpen(false)}
+            >
+              ✕
+            </button>
+
+            <h2 className="text-xl font-bold text-purple-900 mb-4">
+              Send Notification
+            </h2>
+
+            <textarea
+              value={customMessage}
+              onChange={(e) => setCustomMessage(e.target.value)}
+              rows={4}
+              placeholder="Type your custom message..."
+              className="w-full p-3 border rounded-md focus:outline-none focus:ring focus:ring-purple-400"
+            />
+
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setNotificationModalOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-purple-600 text-white hover:bg-purple-700"
+                onClick={() => {
+                  if (currentUserId && customMessage.trim()) {
+                    sendNotificationToUser(currentUserId, customMessage);
+                    setNotificationModalOpen(false);
+                    setCustomMessage("");
+                  } else {
+                    alert("Please enter a message.");
+                  }
+                }}
+              >
+                Send
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Challenge Results Modal */}
       {modalOpen && (
@@ -565,18 +621,23 @@ export default function Dashboard() {
                               <Table>
                                 <TableHeader>
                                   <TableRow>
-                                    <TableHead>Challenge ID</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    {/* <TableHead>Challenge ID</TableHead> */}
                                     <TableHead>Score</TableHead>
                                     <TableHead>Correct</TableHead>
                                     <TableHead>Position</TableHead>
                                     <TableHead>Prize</TableHead>
-                                    <TableHead>Date</TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                   {userResults[key].map((item: any) => (
                                     <TableRow key={item.challenge_id}>
-                                      <TableCell>{item.challenge_id}</TableCell>
+                                      {/* <TableCell>{item.challenge_id}</TableCell> */}
+                                      <TableCell>
+                                        {new Date(
+                                          item.createdAt
+                                        ).toLocaleDateString()}
+                                      </TableCell>
                                       <TableCell>{item.score}</TableCell>
                                       <TableCell>
                                         {item.correct_answers}
@@ -585,11 +646,11 @@ export default function Dashboard() {
                                         {item.position || "-"}
                                       </TableCell>
                                       <TableCell>{item.prize_money}</TableCell>
-                                      <TableCell>
+                                      {/* <TableCell>
                                         {new Date(
                                           item.createdAt
                                         ).toLocaleDateString()}
-                                      </TableCell>
+                                      </TableCell> */}
                                     </TableRow>
                                   ))}
                                 </TableBody>
