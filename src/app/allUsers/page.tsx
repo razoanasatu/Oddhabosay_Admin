@@ -273,7 +273,9 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 w-full min-h-screen bg-gray-50">
-      <h1 className="text-3xl font-bold mb-6 text-black">User Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6 text-purple-900">
+        User Dashboard
+      </h1>
 
       {/* Search, Rows & Broadcast */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
@@ -314,27 +316,27 @@ export default function Dashboard() {
       </div>
 
       {/* Table */}
-      <div className="overflow-auto">
+      <div className="overflow-auto text-purple-900">
         <div style={{ minWidth: "900px" }}>
-          <Table>
-            <TableHeader>
+          <Table className="border border-gray-200">
+            <TableHeader className="bg-gray-100">
               <TableRow>
-                <TableHead className="w-12">
+                <TableHead className="w-12 ">
                   {/*<input type="checkbox" className="rounded" />*/}
                 </TableHead>
-                <TableHead>ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Address</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Institution</TableHead>
-                <TableHead>Action</TableHead>
+                <TableHead className="text-purple-900">ID</TableHead>
+                <TableHead className="text-purple-900">Name</TableHead>
+                <TableHead className="text-purple-900">Email</TableHead>
+                <TableHead className="text-purple-900">Address</TableHead>
+                <TableHead className="text-purple-900">Phone</TableHead>
+                <TableHead className="text-purple-900">Institution</TableHead>
+                <TableHead className="text-purple-900">Action</TableHead>
               </TableRow>
             </TableHeader>
 
             <TableBody>
               {loading ? (
-                <TableRow>
+                <TableRow className="odd:bg-white even:bg-gray-50 hover:bg-gray-100 transition">
                   <TableCell colSpan={7} className="text-center">
                     Loading users...
                   </TableCell>
@@ -375,6 +377,7 @@ export default function Dashboard() {
                       <div className="flex flex-col gap-1">
                         <div className="flex gap-2">
                           <Button
+                            aria-label="View user details"
                             variant="ghost"
                             size="sm"
                             className="rounded-md border border-purple-500 text-purple-500 hover:bg-purple-100"
