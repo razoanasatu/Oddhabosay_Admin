@@ -48,6 +48,9 @@ export default function Dashboard() {
   const [notificationModalOpen, setNotificationModalOpen] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [customMessage, setCustomMessage] = useState("");
+  const [showBroadcastModal, setShowBroadcastModal] = React.useState(false);
+  const [customBroadcastMessage, setCustomBroadcastMessage] =
+    React.useState("");
 
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [userResults, setUserResults] = useState<any | null>(null);
@@ -178,21 +181,23 @@ export default function Dashboard() {
     }
   };
 
-  const broadcastNotification = async () => {
+  const broadcastNotification = async (message: string) => {
     try {
       const res = await fetch(`${baseUrl}/api/notifications/broadcast`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: "📢 System push notification test for all user!", // Broadcast message payload
+          message,
         }),
       });
 
       if (!res.ok) throw new Error("Failed to broadcast notification");
 
-      alert("Broadcast notification sent.");
+      toast.success("Broadcast notification sent.");
+      setShowBroadcastModal(false);
+      setCustomBroadcastMessage("");
     } catch (error) {
-      alert((error as Error).message || "An error occurred.");
+      toast.error((error as Error).message || "An error occurred.");
     }
   };
 
@@ -312,7 +317,7 @@ export default function Dashboard() {
           </Select>
 
           <Button
-            onClick={broadcastNotification}
+            onClick={() => setShowBroadcastModal(true)}
             className="bg-purple-600 text-white hover:bg-purple-700"
           >
             📢 Broadcast
@@ -494,6 +499,52 @@ export default function Dashboard() {
                     sendNotificationToUser(currentUserId, customMessage);
                     setNotificationModalOpen(false);
                     setCustomMessage("");
+                  } else {
+                    alert("Please enter a message.");
+                  }
+                }}
+              >
+                Send
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBroadcastModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-black"
+              onClick={() => setShowBroadcastModal(false)}
+            >
+              ✕
+            </button>
+
+            <h2 className="text-xl font-bold text-purple-900 mb-4">
+              Enter Broadcast Message
+            </h2>
+            <textarea
+              value={customBroadcastMessage}
+              onChange={(e) => setCustomBroadcastMessage(e.target.value)}
+              rows={4}
+              placeholder="Type your custom broadcast message..."
+              className="w-full p-3 border rounded-md focus:outline-none focus:ring focus:ring-purple-400"
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowBroadcastModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-purple-600 text-white hover:bg-purple-700"
+                onClick={() => {
+                  if (customBroadcastMessage.trim()) {
+                    broadcastNotification(customBroadcastMessage);
+                    setShowBroadcastModal(false);
+                    setCustomBroadcastMessage("");
                   } else {
                     alert("Please enter a message.");
                   }
