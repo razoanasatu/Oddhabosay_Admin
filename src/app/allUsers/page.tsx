@@ -18,9 +18,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { baseUrl } from "@/utils/constant";
+import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js";
+import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Bell, ChevronsLeft, ChevronsRight, Eye, Search } from "lucide-react";
 import React, { useEffect, useState } from "react";
+import { Pie } from "react-chartjs-2";
 import * as XLSX from "xlsx";
+ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels);
 
 interface ApiUser {
   id: number;
@@ -214,6 +218,58 @@ export default function Dashboard() {
       [key]: !prev[key],
     }));
   };
+  const pieChartOptions = {
+    plugins: {
+      datalabels: {
+        color: "#fff",
+        font: {
+          weight: "bold" as const,
+          size: 14,
+        },
+        formatter: (value: number) => value, // 👈 show raw number
+        anchor: "center" as const,
+        align: "center" as const,
+      },
+      legend: {
+        position: "bottom" as const,
+      },
+    },
+  };
+
+  const preparePieData = (dataArray: { label: string; value: number }[]) => ({
+    labels: dataArray.map((d) => d.label),
+    datasets: [
+      {
+        data: dataArray.map((d) => d.value),
+        backgroundColor: [
+          "#FF6384",
+          "#36A2EB",
+          "#FFCE56",
+          "#4BC0C0",
+          "#9966FF",
+          "#FF9F40",
+        ],
+        borderWidth: 1,
+      },
+    ],
+  });
+
+  const practiceStatsData =
+    userStats &&
+    preparePieData([
+      { label: "Weekly", value: userStats.practice_stats.weekly },
+      { label: "Monthly", value: userStats.practice_stats.monthly },
+      { label: "Yearly", value: userStats.practice_stats.yearly },
+      { label: "Last 3 Months", value: userStats.practice_stats.last_3_months },
+    ]);
+
+  const examStatsData =
+    userStats &&
+    preparePieData([
+      { label: "Weekly", value: userStats.exam_stats.weekly_exam_stats },
+      { label: "Monthly", value: userStats.exam_stats.monthly_exam_stats },
+      { label: "Mega", value: userStats.exam_stats.mega_exam_stats },
+    ]);
 
   return (
     <div className="p-6 w-full min-h-screen bg-gray-50">
@@ -412,8 +468,35 @@ export default function Dashboard() {
               <p className="text-center text-red-500">{resultError}</p>
             ) : (
               <>
+                {userStats && (
+                  <div className="mt-8 mb-8">
+                    <h3 className="text-lg font-bold mb-4">User Stats</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                      <div className="bg-white rounded shadow p-4 flex flex-col items-center">
+                        <h4 className="text-center font-semibold mb-2">
+                          Practice Stats
+                        </h4>
+                        <div className="w-64">
+                          <Pie
+                            data={practiceStatsData}
+                            options={pieChartOptions}
+                          />
+                        </div>
+                      </div>
+                      <div className="bg-white rounded shadow p-4 flex flex-col items-center">
+                        <h4 className="text-center font-semibold mb-2">
+                          Exam Stats
+                        </h4>
+                        <div className="w-64">
+                          <Pie data={examStatsData} options={pieChartOptions} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {userResults && (
-                  <div className="space-y-4">
+                  <div className="space-y-4 mb-8">
                     {[
                       "weekly",
                       "monthly",
@@ -510,38 +593,6 @@ export default function Dashboard() {
                         </div>
                       </div>
                     ))}
-                  </div>
-                )}
-
-                {userStats && (
-                  <div className="mt-6">
-                    <h3 className="text-lg font-bold mb-2">User Stats</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-800">
-                      <div>
-                        <h4 className="font-semibold mb-1">Practice Stats</h4>
-                        <ul className="list-disc list-inside">
-                          <li>Weekly: {userStats.practice_stats.weekly}</li>
-                          <li>Monthly: {userStats.practice_stats.monthly}</li>
-                          <li>Yearly: {userStats.practice_stats.yearly}</li>
-                          <li>
-                            Last 3 Months:{" "}
-                            {userStats.practice_stats.last_3_months}
-                          </li>
-                        </ul>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold mb-1">Exam Stats</h4>
-                        <ul className="list-disc list-inside">
-                          <li>
-                            Weekly: {userStats.exam_stats.weekly_exam_stats}
-                          </li>
-                          <li>
-                            Monthly: {userStats.exam_stats.monthly_exam_stats}
-                          </li>
-                          <li>Mega: {userStats.exam_stats.mega_exam_stats}</li>
-                        </ul>
-                      </div>
-                    </div>
                   </div>
                 )}
               </>
