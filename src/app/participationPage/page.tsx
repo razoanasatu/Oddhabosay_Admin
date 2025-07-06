@@ -52,7 +52,7 @@ const ParticipationPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-8 bg-white dark:bg-gray-900 rounded-xl shadow-lg mt-10">
+    <div className="max-w-7xl mx-auto p-8 bg-white dark:bg-gray-900 rounded-xl shadow-lg mt-10">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
           👥 Participants ({year})
@@ -70,48 +70,57 @@ const ParticipationPage: React.FC = () => {
           No participants found.
         </p>
       ) : (
-        <ul className="space-y-6">
-          {data.map((entry) => (
-            <li
-              key={entry.user.id}
-              className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-gray-50 dark:bg-gray-800 shadow-sm"
-            >
-              <h3 className="text-lg font-semibold text-blue-700 dark:text-blue-300 mb-2">
-                👤 {entry.user.name}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-3 text-sm text-gray-700 dark:text-gray-300">
-                <div>
-                  <span className="font-medium">Weekly:</span>{" "}
-                  {entry.participation.weeklyChallengeCount}
-                </div>
-                <div>
-                  <span className="font-medium">Monthly:</span>{" "}
-                  {entry.participation.monthlyChallengeCount}
-                </div>
-                <div>
-                  <span className="font-medium">Mega:</span>{" "}
-                  {entry.participation.megaChallengeCount}
-                </div>
-                <div>
-                  <span className="font-medium">Special Events:</span>{" "}
-                  {entry.participation.special_eventChallengeCount}
-                </div>
-                <div>
-                  <span className="font-medium">Practice:</span>{" "}
-                  {entry.participation.practiceChallengeCount}
-                </div>
-                <div>
-                  <span className="font-medium">Created:</span>{" "}
-                  {new Date(entry.participation.createdAt).toLocaleString()}
-                </div>
-                <div>
-                  <span className="font-medium">Updated:</span>{" "}
-                  {new Date(entry.participation.updatedAt).toLocaleString()}
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+            <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+              <tr>
+                <th className="px-4 py-2 text-left font-semibold">Name</th>
+                <th className="px-4 py-2 text-left font-semibold">Weekly</th>
+                <th className="px-4 py-2 text-left font-semibold">Monthly</th>
+                <th className="px-4 py-2 text-left font-semibold">Mega</th>
+                <th className="px-4 py-2 text-left font-semibold">
+                  Special Events
+                </th>
+                <th className="px-4 py-2 text-left font-semibold">Practice</th>
+                <th className="px-4 py-2 text-left font-semibold">Created</th>
+                <th className="px-4 py-2 text-left font-semibold">Updated</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700 text-gray-800 dark:text-gray-100">
+              {data.map((entry) => (
+                <tr
+                  key={entry.user.id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  <td className="px-4 py-3 font-medium text-blue-700 dark:text-blue-300">
+                    👤 {entry.user.name}
+                  </td>
+                  <td className="px-4 py-3">
+                    {entry.participation.weeklyChallengeCount}
+                  </td>
+                  <td className="px-4 py-3">
+                    {entry.participation.monthlyChallengeCount}
+                  </td>
+                  <td className="px-4 py-3">
+                    {entry.participation.megaChallengeCount}
+                  </td>
+                  <td className="px-4 py-3">
+                    {entry.participation.special_eventChallengeCount}
+                  </td>
+                  <td className="px-4 py-3">
+                    {entry.participation.practiceChallengeCount}
+                  </td>
+                  <td className="px-4 py-3">
+                    {new Date(entry.participation.createdAt).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3">
+                    {new Date(entry.participation.updatedAt).toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
