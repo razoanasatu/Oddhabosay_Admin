@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 type ChallengeRequirement = {
   id: number;
+  name: string;
   number_of_practice_challenges: number;
   number_of_weekly_challenges: number;
   number_of_monthly_challenges: number;
@@ -51,7 +52,15 @@ const ChallengeRequirementManagement = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!formData) return;
     const { name, value } = e.target;
-    setFormData((prev) => (prev ? { ...prev, [name]: Number(value) } : null));
+
+    setFormData((prev) =>
+      prev
+        ? {
+            ...prev,
+            [name]: name === "name" ? value : Number(value),
+          }
+        : null
+    );
   };
 
   const resetForm = () => {
@@ -116,6 +125,7 @@ const ChallengeRequirementManagement = () => {
 
   const openCreateForm = () => {
     setFormData({
+      name: "",
       number_of_practice_challenges: 0,
       number_of_weekly_challenges: 0,
       number_of_monthly_challenges: 0,
@@ -147,7 +157,7 @@ const ChallengeRequirementManagement = () => {
         <table className="min-w-full">
           <thead className="bg-gray-100">
             <tr>
-              <th className="p-3 text-sm font-semibold text-left">Id</th>
+              <th className="p-3 text-sm font-semibold text-left">Name</th>
               <th className="p-3 text-sm font-semibold text-left">
                 Practice Qs Solved
               </th>
@@ -175,7 +185,7 @@ const ChallengeRequirementManagement = () => {
             ) : (
               requirements.map((r) => (
                 <tr key={r.id} className="border-t hover:bg-gray-50">
-                  <td className="p-3">{r.id}</td>
+                  <td className="p-3">{r.name}</td>
                   <td className="p-3">
                     {r.number_of_practice_questions_solved}
                   </td>
@@ -216,6 +226,7 @@ const ChallengeRequirementManagement = () => {
       </div>
 
       {/* Create/Edit Modal */}
+
       {showFormModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-sm p-4">
           <div className="bg-white p-6 rounded shadow max-w-lg w-full space-y-4 max-h-[80vh] overflow-y-auto">
@@ -236,13 +247,13 @@ const ChallengeRequirementManagement = () => {
                       {key.replace(/_/g, " ")}
                     </label>
                     <input
-                      type="text"
+                      type={key === "name" ? "text" : "text"}
                       name={key}
                       value={value}
                       onChange={handleChange}
                       className="border px-3 py-2 rounded appearance-none"
-                      inputMode="numeric"
-                      pattern="[0-9]*"
+                      inputMode={key === "name" ? undefined : "numeric"}
+                      pattern={key === "name" ? undefined : "[0-9]*"}
                     />
                   </div>
                 ))}

@@ -44,6 +44,8 @@ export default function ChallengeResultPage() {
   const [loading, setLoading] = useState(true);
   const [distributing, setDistributing] = useState(false);
   const [message, setMessage] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [customMessage, setCustomMessage] = useState("");
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -83,6 +85,12 @@ export default function ChallengeResultPage() {
         `${baseUrl}/api/challenges/${id}/distribute-prize-money`,
         {
           method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: customMessage || null,
+          }),
         }
       );
 
@@ -97,7 +105,9 @@ export default function ChallengeResultPage() {
       setMessage("❌ Error distributing prize money.");
       console.error(err);
     } finally {
+      setIsModalOpen(false);
       setDistributing(false);
+      setCustomMessage("");
     }
   };
 
@@ -191,12 +201,13 @@ export default function ChallengeResultPage() {
         <h1 className="text-xl font-bold">Challenge Results - ID: {id}</h1>
         <div className="flex gap-2">
           <button
-            onClick={handleDistributePrize}
+            onClick={() => setIsModalOpen(true)}
             disabled={distributing}
             className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 disabled:opacity-50"
           >
             {distributing ? "Distributing..." : "Prize Money Distribute"}
           </button>
+
           <button
             onClick={handleDownloadExcel}
             className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
@@ -267,6 +278,40 @@ export default function ChallengeResultPage() {
               ))}
             </tbody>
           </table>
+
+          {isModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/30 backdrop-blur-sm p-4">
+              <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                <h2 className="text-lg font-bold mb-4">
+                  Distribute Prize Money
+                </h2>
+                <label className="block mb-2 text-sm text-gray-700">
+                  Optional Message:
+                </label>
+                <textarea
+                  value={customMessage}
+                  onChange={(e) => setCustomMessage(e.target.value)}
+                  className="w-full h-24 p-2 border border-gray-300 rounded mb-4"
+                  placeholder="Enter a custom message (optional)"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDistributePrize}
+                    disabled={distributing}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {distributing ? "Sending..." : "Send"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       ))}
     </div>
