@@ -6,8 +6,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { destroyCookie } from "nookies";
 import { useState } from "react";
-import { FaBars, FaBell, FaTimes } from "react-icons/fa";
-import { FiSearch } from "react-icons/fi";
+import {
+  FaBars,
+  FaBell,
+  FaSearch,
+  FaSignOutAlt,
+  FaTimes,
+} from "react-icons/fa"; // Added FaSignOutAlt, removed FaUserCircle as it wasn't used
 
 const navItems = [
   { label: "Dashboard", href: "/" },
@@ -42,29 +47,47 @@ export default function AdminLayout({
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex h-screen bg-gray-50 font-sans text-gray-900">
+      {/* Sidebar Overlay for Mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden transition-opacity duration-300"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true" // Indicate to screen readers that this is a decorative overlay
+        ></div>
+      )}
+
       {/* Sidebar */}
-      <div
+      <aside
         className={clsx(
-          "fixed z-20 md:relative md:translate-x-0 transition-transform duration-200 ease-in-out bg-black w-64 flex-shrink-0 text-white h-full flex flex-col overflow-y-auto",
+          "fixed inset-y-0 left-0 z-50 transform md:translate-x-0 transition-transform duration-300 ease-in-out",
+          "bg-black text-white shadow-xl", // Original black background + added shadow
+          "w-64 flex-shrink-0 flex flex-col",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Close button - mobile only */}
         <button
-          className="absolute top-4 right-4 text-white md:hidden"
+          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors duration-200 md:hidden p-2 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-600"
           onClick={() => setSidebarOpen(false)}
+          aria-label="Close sidebar"
         >
-          <FaTimes size={20} />
+          <FaTimes size={24} />
         </button>
 
         {/* Top Logo */}
-        <div className="p-4 flex justify-center items-center">
-          <Image src="/logo.png" alt="Logo" width={120} height={40} />
+        <div className="flex justify-center items-center py-6 px-4 border-b border-gray-700">
+          <Image
+            src="/logo.png" // Ensure this path is correct
+            alt="Company Logo"
+            width={150} // Slightly larger
+            height={50} // Adjust height proportionally
+            priority // For better loading performance on initial render
+          />
         </div>
 
-        {/* Nav Items */}
-        <nav className="flex-1 flex flex-col justify-center px-4 space-y-4">
+        {/* Navigation Items */}
+        <nav className="flex-1 flex flex-col py-6 px-4 space-y-2 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
 
@@ -73,9 +96,14 @@ export default function AdminLayout({
                 <button
                   key="logout"
                   onClick={handleLogout}
-                  className="text-white hover:bg-gray-700 p-2 rounded px-10 text-left"
+                  className="w-full text-left flex items-center gap-3 px-4 py-3 rounded-lg text-red-300 hover:bg-red-700 hover:text-white transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-400 mt-auto group" // Push to bottom, changed color for logout
+                  aria-label="Log out of the system"
                 >
-                  Log Out
+                  <FaSignOutAlt
+                    className="text-red-300 group-hover:text-white transition-colors duration-200"
+                    size={18}
+                  />
+                  <span>{item.label}</span>
                 </button>
               );
             }
@@ -85,70 +113,82 @@ export default function AdminLayout({
                 key={item.label}
                 href={item.href}
                 className={clsx(
-                  "text-white hover:bg-gray-700 p-2 rounded cursor-pointer px-10 block",
-                  isActive && "bg-purple-600"
+                  "flex items-center gap-3 px-4 py-3 rounded-lg text-lg font-medium",
+                  "transition-all duration-200 ease-in-out",
+                  isActive
+                    ? "bg-purple-600 text-white shadow-md transform translate-x-1" // Active state with slight translation
+                    : "text-gray-300 hover:bg-gray-700 hover:text-white" // Text color for non-active items
                 )}
                 onClick={() => setSidebarOpen(false)}
               >
-                {item.label}
+                <span>{item.label}</span>
               </Link>
             );
           })}
         </nav>
-      </div>
+      </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-x-auto">
-        {/* Navbar */}
-        <header className="w-full bg-white shadow p-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+      <div className="flex-1 flex flex-col md:ml-64 overflow-hidden">
+        {/* Navbar (Header) */}
+        <header className="w-full bg-white shadow-lg p-4 sm:p-6 flex items-center justify-between z-40 border-b border-gray-100">
+          <div className="flex items-center space-x-4 sm:space-x-6">
             {/* Hamburger for mobile */}
             <button
-              className="md:hidden text-gray-800"
+              className="md:hidden text-gray-600 hover:text-purple-700 transition-colors duration-200 p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-300"
               onClick={() => setSidebarOpen(true)}
+              aria-label="Open sidebar menu"
             >
-              <FaBars size={24} />
+              <FaBars size={28} />
             </button>
 
             {/* Search Input */}
-            <div className="flex items-center w-full max-w-sm">
-              <div className="flex items-center bg-blue-100 px-3 py-2 rounded-l-sm flex-grow">
-                <FiSearch className="text-gray-500" />
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="w-full bg-transparent outline-none placeholder-gray-500 text-sm ml-2"
-                />
-              </div>
-              <button className="bg-purple-600 text-white text-sm px-4 py-2 rounded-r-sm hover:bg-purple-700">
-                Search
-              </button>
+            <div className="relative flex items-center w-full max-w-sm lg:max-w-md">
+              <input
+                type="text"
+                placeholder="Search anything..."
+                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400 text-sm md:text-base transition-all duration-200 shadow-sm"
+                aria-label="Search input"
+              />
+              <FaSearch className="absolute left-3 text-gray-400" size={18} />
             </div>
           </div>
 
           {/* Notification and Profile */}
-          <div className="flex items-center space-x-4">
-            <FaBell size={20} className="text-purple-600 cursor-pointer" />
-            <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-4 sm:space-x-6">
+            <button
+              className="relative text-gray-600 hover:text-purple-700 transition-colors duration-200 p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-300"
+              aria-label="Notifications"
+            >
+              <FaBell size={24} />
+              {/* Notification badge - without animation */}
+              <span className="absolute top-1 right-1 h-3 w-3 bg-red-500 rounded-full border-2 border-white"></span>
+            </button>
+
+            <div className="flex items-center space-x-3 cursor-pointer group">
               <Image
-                src="/profile.png"
-                alt="Profile"
-                width={36}
-                height={36}
-                className="rounded-full object-cover"
+                src="/profile.png" // Ensure this path is correct
+                alt="User Profile"
+                width={44} // Slightly larger profile image
+                height={44}
+                className="rounded-full object-cover border-2 border-purple-300 group-hover:border-purple-500 transition-colors duration-200 shadow-md"
               />
-              <div className="leading-tight">
-                <p className="text-purple-600 font-semibold">
+              <div className="leading-tight hidden sm:block">
+                {" "}
+                {/* Hide name on very small screens */}
+                <p className="text-purple-700 font-semibold text-base group-hover:text-purple-900 transition-colors duration-200">
                   Rashidatul Kobra
                 </p>
-                <p className="text-sm text-black">Admin</p>
+                <p className="text-sm text-gray-600">Admin</p>
               </div>
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="p-4 overflow-y-auto flex-1 min-w-0">{children}</main>
+        <main className="flex-1 p-6 md:p-8 overflow-y-auto min-w-0 bg-gray-50">
+          {children}
+        </main>
       </div>
     </div>
   );

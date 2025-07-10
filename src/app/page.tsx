@@ -132,7 +132,9 @@ export default function Dashboard() {
 
   return (
     <div className="p-4 w-full min-h-screen bg-gray-100">
-      <h1 className="text-black text-2xl font-bold mb-6">Dashboard</h1>
+      <h1 className="text-3xl sm:text-4xl font-extrabold text-purple-900 mb-4 sm:mb-0">
+        Dashboard
+      </h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cardsData.map((card, index) => {

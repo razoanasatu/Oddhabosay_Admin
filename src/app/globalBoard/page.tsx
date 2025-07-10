@@ -134,8 +134,10 @@ export default function Globalboard() {
   return (
     <div className="p-6 w-full min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-2">
-        <h1 className="text-black text-xl font-bold">LeaderBoard</h1>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-4 border-b border-purple-200">
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-purple-900 mb-4 sm:mb-0">
+          LeaderBoard
+        </h1>
 
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
