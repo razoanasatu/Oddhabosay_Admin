@@ -8,14 +8,20 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify"; // Your toast notification library
 
 // PDF specific imports
-import {
-  Document,
-  Page,
-  PDFDownloadLink,
-  StyleSheet,
-  Text,
-  View,
-} from "@react-pdf/renderer";
+import dynamic from "next/dynamic"; // Import dynamic from next/dynamic
+
+// Dynamically import PDFDownloadLink, ensuring it's only loaded on the client-side
+const PDFDownloadLink = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFDownloadLink),
+  {
+    ssr: false, // This is crucial: prevents server-side rendering of this component
+  }
+);
+
+// Keep other @react-pdf/renderer components imported directly,
+// as they are used within the PDF document structure which is handled
+// by the client-side-only PDFDownloadLink.
+import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 
 // --- INTERFACES (Copy from Step 1, or ensure they are imported if in a shared file) ---
 interface PaymentMethod {
@@ -64,12 +70,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginBottom: 20,
     textAlign: "center",
-    color: "#4a148c", // Purple
+    color: "#4A0E4B", // Darker purple from dashboard
   },
   subHeader: {
     fontSize: 18,
     marginBottom: 10,
-    color: "#6a1b9a", // Darker purple
+    color: "#6A1B9A", // Darker purple
   },
   text: {
     fontSize: 12,
@@ -252,20 +258,40 @@ export default function UserPaymentDetailsPage() {
   if (loading) {
     return (
       <div className="p-6 text-center text-lg text-purple-900 min-h-screen flex items-center justify-center">
-        Loading payment details...
+        <div className="flex items-center justify-center">
+          <svg
+            className="animate-spin h-6 w-6 mr-3 text-purple-600"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            ></circle>
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            ></path>
+          </svg>
+          Loading payment details...
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-6 text-center text-red-500 min-h-screen flex flex-col items-center justify-center">
-        <p>{error}</p>
+      <div className="p-6 text-center text-red-600 min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <p className="text-xl font-semibold mb-4">Error: {error}</p>
         <Button
           onClick={() => router.back()}
-          className="mt-4 bg-purple-600 text-white hover:bg-purple-700"
+          className="mt-4 bg-purple-700 text-white hover:bg-purple-800 px-6 py-3 rounded-md shadow-lg transition-all duration-200"
         >
-          Go Back
+          <ArrowLeft className="w-5 h-5 mr-2" /> Go Back
         </Button>
       </div>
     );
@@ -273,106 +299,124 @@ export default function UserPaymentDetailsPage() {
 
   if (!userDetails) {
     return (
-      <div className="p-6 text-center text-gray-500 min-h-screen flex flex-col items-center justify-center">
-        <p>No user details found.</p>
+      <div className="p-6 text-center text-gray-700 min-h-screen flex flex-col items-center justify-center bg-gray-50">
+        <p className="text-xl font-semibold mb-4">No user details found.</p>
         <Button
           onClick={() => router.back()}
-          className="mt-4 bg-purple-600 text-white hover:bg-purple-700"
+          className="mt-4 bg-purple-700 text-white hover:bg-purple-800 px-6 py-3 rounded-md shadow-lg transition-all duration-200"
         >
-          Go Back
+          <ArrowLeft className="w-5 h-5 mr-2" /> Go Back
         </Button>
       </div>
     );
   }
 
   return (
-    <div className="p-6 w-full min-h-screen bg-gray-50">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-purple-900">
-          Payment Details for {userDetails.full_name}
+    <div className="p-6 w-full min-h-screen bg-gray-50 font-sans">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 pb-4 border-b-2 border-purple-200">
+        <h1 className="text-4xl font-bold mb-4 sm:mb-0 text-purple-900">
+          Payment Details for{" "}
+          <span className="text-purple-700">{userDetails.full_name}</span>
         </h1>
         <Button
           onClick={() => router.back()}
           variant="outline"
-          className="flex items-center gap-2 bg-purple-600 text-white hover:bg-purple-700"
+          className="flex items-center gap-2 bg-purple-700 text-white hover:bg-purple-800 px-6 py-3 rounded-md shadow-md transition-all duration-200"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+          <ArrowLeft className="w-5 h-5" /> Back to Dashboard
         </Button>
       </div>
 
-      <div className="bg-white p-8 rounded-lg shadow-md mb-8">
-        <h2 className="text-2xl font-semibold text-purple-800 mb-4">
+      <div className="bg-white p-8 rounded-xl shadow-lg mb-8 border border-gray-200">
+        <h2 className="text-2xl font-bold text-purple-800 mb-6 border-b pb-3">
           User Information
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
-          <p>
-            <span className="font-semibold">Name:</span> {userDetails.full_name}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-gray-800 text-base">
+          <p className="flex flex-col">
+            <span className="font-semibold text-purple-700">Name:</span>{" "}
+            {userDetails.full_name}
           </p>
-          <p>
-            <span className="font-semibold">Email:</span> {userDetails.email}
+          <p className="flex flex-col">
+            <span className="font-semibold text-purple-700">Email:</span>{" "}
+            {userDetails.email}
           </p>
-          <p>
-            <span className="font-semibold">Phone No:</span>{" "}
+          <p className="flex flex-col">
+            <span className="font-semibold text-purple-700">Phone No:</span>{" "}
             {userDetails.phone_no}
           </p>
-          <p>
-            <span className="font-semibold">Address:</span>{" "}
+          <p className="flex flex-col">
+            <span className="font-semibold text-purple-700">Address:</span>{" "}
             {userDetails.address || "N/A"}
           </p>
-          <p>
-            <span className="font-semibold">Institution:</span>{" "}
+          <p className="flex flex-col">
+            <span className="font-semibold text-purple-700">Institution:</span>{" "}
             {userDetails.institution_name || "N/A"}
           </p>
-          <p>
-            <span className="font-semibold">Total Prize Money Received:</span>{" "}
-            {userDetails.total_prize_money_received}
+          <p className="flex flex-col">
+            <span className="font-semibold text-purple-700">
+              Total Prize Money Received:
+            </span>{" "}
+            <span className="text-green-600 font-bold">
+              ${userDetails.total_prize_money_received}
+            </span>
           </p>
-          <p>
-            <span className="font-semibold">Total Withdrawal:</span>{" "}
-            {userDetails.total_withdrawal}
+          <p className="flex flex-col">
+            <span className="font-semibold text-purple-700">
+              Total Withdrawal:
+            </span>{" "}
+            <span className="text-red-600 font-bold">
+              ${userDetails.total_withdrawal}
+            </span>
           </p>
-          <p>
-            <span className="font-semibold">Total Spent:</span>{" "}
-            {userDetails.total_spent}
+          <p className="flex flex-col">
+            <span className="font-semibold text-purple-700">Total Spent:</span>{" "}
+            <span className="text-blue-600 font-bold">
+              ${userDetails.total_spent}
+            </span>
           </p>
         </div>
       </div>
 
-      <div className="bg-white p-8 rounded-lg shadow-md">
-        <h2 className="text-2xl font-semibold text-purple-800 mb-4">
+      <div className="bg-white p-8 rounded-xl shadow-lg mb-8 border border-gray-200">
+        <h2 className="text-2xl font-bold text-purple-800 mb-6 border-b pb-3">
           Payment Methods
         </h2>
         {userDetails.payment_methods &&
         userDetails.payment_methods.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-200">
-              <thead>
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <table className="min-w-full bg-white">
+              <thead className="bg-purple-50">
                 <tr>
-                  <th className="py-2 px-4 border-b text-left text-gray-600">
+                  <th className="py-3 px-5 border-b text-left text-purple-900 font-bold text-sm uppercase tracking-wider">
                     Method Type
                   </th>
-                  <th className="py-2 px-4 border-b text-left text-gray-600">
+                  <th className="py-3 px-5 border-b text-left text-purple-900 font-bold text-sm uppercase tracking-wider">
                     Card/Account Name
                   </th>
-                  <th className="py-2 px-4 border-b text-left text-gray-600">
+                  <th className="py-3 px-5 border-b text-left text-purple-900 font-bold text-sm uppercase tracking-wider">
                     Account/Card Number
                   </th>
-                  <th className="py-2 px-4 border-b text-left text-gray-600">
+                  <th className="py-3 px-5 border-b text-left text-purple-900 font-bold text-sm uppercase tracking-wider">
                     Created At
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {userDetails.payment_methods.map((method) => (
-                  <tr key={method.id} className="hover:bg-gray-50">
-                    <td className="py-2 px-4 border-b">{method.method_type}</td>
-                    <td className="py-2 px-4 border-b">
+                  <tr
+                    key={method.id}
+                    className="border-b border-gray-100 last:border-b-0 hover:bg-purple-50 transition-colors duration-150"
+                  >
+                    <td className="py-3 px-5 text-gray-800">
+                      {method.method_type}
+                    </td>
+                    <td className="py-3 px-5 text-gray-800">
                       {method.card_name || method.accountName || "N/A"}
                     </td>
-                    <td className="py-2 px-4 border-b">
+                    <td className="py-3 px-5 text-gray-800">
                       {method.card_number || method.accountNumber || "N/A"}
                     </td>
-                    <td className="py-2 px-4 border-b">
+                    <td className="py-3 px-5 text-gray-800">
                       {new Date(method.createdAt).toLocaleDateString()}
                     </td>
                   </tr>
@@ -381,13 +425,13 @@ export default function UserPaymentDetailsPage() {
             </table>
           </div>
         ) : (
-          <p className="text-gray-600">
+          <p className="text-gray-600 italic py-4 text-center">
             No payment methods found for this user.
           </p>
         )}
       </div>
 
-      <div className="mt-8 text-center">
+      <div className="mt-8 flex justify-center">
         {userDetails && (
           <PDFDownloadLink
             document={<PaymentDetailsPdf user={userDetails} />}
@@ -398,14 +442,14 @@ export default function UserPaymentDetailsPage() {
           >
             {({ loading }) => (
               <Button
-                className="bg-green-600 text-white hover:bg-green-700"
+                className="bg-green-600 text-white hover:bg-green-700 px-8 py-3 rounded-lg shadow-lg transition-all duration-200 text-lg flex items-center gap-2"
                 disabled={loading}
               >
                 {loading ? (
                   "Generating PDF..."
                 ) : (
                   <>
-                    <Download className="w-4 h-4 mr-2" /> Download as PDF
+                    <Download className="w-5 h-5" /> Download as PDF
                   </>
                 )}
               </Button>
