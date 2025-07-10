@@ -398,7 +398,7 @@ export default function Dashboard() {
                       {/*<input type="checkbox" className="rounded" />*/}
                     </TableCell>
                     <TableCell>{user.id}</TableCell>
-                    <TableCell>
+                    <TableCell className="min-w-[300px]">
                       <div className="flex items-center gap-2">
                         <img
                           src={
@@ -413,9 +413,15 @@ export default function Dashboard() {
                         <span>{user.full_name}</span>
                       </div>
                     </TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>{user.address}</TableCell>
-                    <TableCell>{user.phone_no}</TableCell>
+                    <TableCell className="min-w-[200px]">
+                      {user.email}
+                    </TableCell>
+                    <TableCell className="min-w-[450px]">
+                      {user.address}
+                    </TableCell>
+                    <TableCell className="min-w-[150px]">
+                      {user.phone_no}
+                    </TableCell>
                     <TableCell>
                       {" "}
                       {/* Add this whole TableCell */}
@@ -432,7 +438,9 @@ export default function Dashboard() {
                       </Link>
                     </TableCell>
 
-                    <TableCell>{user.institution_name || "-"}</TableCell>
+                    <TableCell className="min-w-[200px]">
+                      {user.institution_name || "-"}
+                    </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
                         <div className="flex gap-2">
