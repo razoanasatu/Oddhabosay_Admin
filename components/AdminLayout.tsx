@@ -4,7 +4,7 @@ import clsx from "clsx";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { destroyCookie } from "nookies"; // 👈 Import nookies
+import { destroyCookie } from "nookies";
 import { useState } from "react";
 import { FaBars, FaBell, FaTimes } from "react-icons/fa";
 import { FiSearch } from "react-icons/fi";
@@ -23,7 +23,6 @@ const navItems = [
   { label: "Win a Laptop", href: "/winLaptopDetails" },
   { label: "Eligibility Details", href: "/eligibilityDetails" },
   { label: "Participation", href: "/participationPage" },
-  // Insert "Log Out" before "More"
   { label: "Log Out", href: "#logout" },
 ];
 
@@ -39,7 +38,6 @@ export default function AdminLayout({
   const handleLogout = () => {
     destroyCookie(null, "token");
     destroyCookie(null, "user");
-
     router.push("/signIn");
   };
 
@@ -48,7 +46,7 @@ export default function AdminLayout({
       {/* Sidebar */}
       <div
         className={clsx(
-          "fixed z-20 md:relative md:translate-x-0 transition-transform duration-200 ease-in-out bg-black w-64 text-white h-full flex flex-col overflow-y-auto",
+          "fixed z-20 md:relative md:translate-x-0 transition-transform duration-200 ease-in-out bg-black w-64 flex-shrink-0 text-white h-full flex flex-col overflow-y-auto",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -100,7 +98,7 @@ export default function AdminLayout({
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col overflow-x-auto">
         {/* Navbar */}
         <header className="w-full bg-white shadow p-4 flex items-center justify-between">
           <div className="flex items-center space-x-3">
@@ -150,7 +148,7 @@ export default function AdminLayout({
         </header>
 
         {/* Page Content */}
-        <main className="p-4 overflow-y-auto flex-1">{children}</main>
+        <main className="p-4 overflow-y-auto flex-1 min-w-0">{children}</main>
       </div>
     </div>
   );

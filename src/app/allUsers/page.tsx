@@ -20,7 +20,15 @@ import {
 import { baseUrl } from "@/utils/constant";
 import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
-import { Bell, ChevronsLeft, ChevronsRight, Eye, Search } from "lucide-react";
+import {
+  Bell,
+  ChevronsLeft,
+  ChevronsRight,
+  DollarSign,
+  Eye,
+  Search,
+} from "lucide-react";
+import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { Pie } from "react-chartjs-2";
 import { toast } from "react-toastify";
@@ -35,6 +43,27 @@ interface ApiUser {
   address: string;
   image: string | null;
   institution_name?: string; // Add this line
+  total_prize_money_received: string; // Add these
+  total_withdrawal: string; // Add these
+  total_spent: string; // Add these
+  payment_methods: PaymentMethod[]; // Add this
+}
+interface PaymentMethod {
+  id: number;
+  method_type: string;
+  card_name: string | null;
+  card_number: string | null;
+  exp_month: string | null;
+  exp_year: string | null;
+  cvc: string | null;
+  branchName: string | null;
+  accountName: string | null;
+  accountNumber: string | null;
+  routingNumber: string | null;
+  swiftCode: string | null;
+  accountOwnerPhoneNumber: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function Dashboard() {
@@ -326,8 +355,10 @@ export default function Dashboard() {
       </div>
 
       {/* Table */}
-      <div className="overflow-auto text-purple-900">
-        <div style={{ minWidth: "900px" }}>
+      <div className=" w-full text-purple-900">
+        <div className="min-w-[1200px]">
+          {" "}
+          {/* Adjust width as needed */}
           <Table className="border border-gray-200">
             <TableHeader className="bg-gray-100">
               <TableRow>
@@ -339,6 +370,9 @@ export default function Dashboard() {
                 <TableHead className="text-purple-900">Email</TableHead>
                 <TableHead className="text-purple-900">Address</TableHead>
                 <TableHead className="text-purple-900">Phone</TableHead>
+                <TableHead className="text-purple-900">
+                  Payment Details
+                </TableHead>
                 <TableHead className="text-purple-900">Institution</TableHead>
                 <TableHead className="text-purple-900">Action</TableHead>
               </TableRow>
@@ -382,6 +416,22 @@ export default function Dashboard() {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.address}</TableCell>
                     <TableCell>{user.phone_no}</TableCell>
+                    <TableCell>
+                      {" "}
+                      {/* Add this whole TableCell */}
+                      <Link href={`/paymentDetails/${user.id}`} passHref>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="rounded-md border border-blue-500 text-blue-500 hover:bg-blue-100"
+                          title="View Payment Details"
+                        >
+                          <DollarSign className="w-4 h-4" />{" "}
+                          {/* You'll need to import DollarSign */}
+                        </Button>
+                      </Link>
+                    </TableCell>
+
                     <TableCell>{user.institution_name || "-"}</TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
@@ -668,8 +718,8 @@ export default function Dashboard() {
                           }`}
                         >
                           {userResults[key]?.length > 0 ? (
-                            <div className="overflow-x-auto max-h-80 scrollbar-thin scrollbar-thumb-gray-300">
-                              <Table>
+                            <div className="max-h-80 scrollbar-thin scrollbar-thumb-gray-300">
+                              <Table className="overflow-x-auto">
                                 <TableHeader>
                                   <TableRow>
                                     <TableHead>Date</TableHead>
