@@ -21,10 +21,10 @@ import { baseUrl } from "@/utils/constant";
 import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import {
+  Banknote,
   Bell,
   ChevronsLeft,
   ChevronsRight,
-  DollarSign,
   Eye,
   Search,
 } from "lucide-react";
@@ -43,6 +43,7 @@ interface ApiUser {
   address: string;
   image: string | null;
   institution_name?: string; // Add this line
+  institution_type?: string; // Added this line
   total_prize_money_received: string; // Add these
   total_withdrawal: string; // Add these
   total_spent: string; // Add these
@@ -132,16 +133,24 @@ export default function Dashboard() {
     setCurrentPage(1);
   };
 
-  const filteredUsers = users.filter((user) =>
-    [user.full_name, user.email, user.phone_no, user.address]
-      .join(" ")
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users.filter((user) => {
+    const query = searchQuery.toLowerCase();
+    // Fields to search in
+    const fieldsToSearch = [
+      user.full_name,
+      user.email,
+      user.phone_no,
+      user.address,
+      user.institution_name, // Add institution name to search
+      user.institution_type, // Add institution type to search
+    ];
 
-  const sortedUsers = [...filteredUsers].sort((a, b) =>
-    a.id.toString().localeCompare(b.id.toString())
-  );
+    // Check if any of the fields contain the query
+    return fieldsToSearch.some((field) => field?.toLowerCase().includes(query));
+  });
+
+  // Sort by ID in increasing order
+  const sortedUsers = [...filteredUsers].sort((a, b) => a.id - b.id);
 
   const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
   const indexOfLastRow = currentPage * rowsPerPage;
@@ -238,6 +247,7 @@ export default function Dashboard() {
         Email: user.email,
         Address: user.address,
         Phone: user.phone_no,
+        "Institution Type": user.institution_type || "N/A",
         Institution: user.institution_name || "N/A", // ✅ Added
       },
     ];
@@ -315,6 +325,14 @@ export default function Dashboard() {
       <h1 className="text-3xl font-bold mb-6 text-purple-900">
         User Dashboard
       </h1>
+      {/* Centered Search Result Count */}
+      {searchQuery && (
+        <div className="flex justify-center w-full mb-4">
+          <span className="text-2xl font-semibold text-purple-900 animate-fade-in tracking-wide">
+            Total number of users found: {filteredUsers.length}
+          </span>
+        </div>
+      )}
 
       {/* Search, Rows & Broadcast */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
@@ -328,17 +346,21 @@ export default function Dashboard() {
           />
         </div>
 
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center mx-auto sm:mx-0 mt-4 sm:mt-0">
           <Select
             onValueChange={handleRowsPerPageChange}
             defaultValue={rowsPerPage.toString()}
           >
-            <SelectTrigger className="w-28">
+            <SelectTrigger className="w-28 border-2 border-purple-600 rounded-md shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-600 transition-all">
               <SelectValue placeholder="Rows" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="border-purple-600">
               {[5, 10, 20, 50].map((num) => (
-                <SelectItem key={num} value={num.toString()}>
+                <SelectItem
+                  key={num}
+                  value={num.toString()}
+                  className="hover:bg-purple-100 focus:bg-purple-200"
+                >
                   {num} rows
                 </SelectItem>
               ))}
@@ -373,6 +395,9 @@ export default function Dashboard() {
                 <TableHead className="text-purple-900">
                   Payment Details
                 </TableHead>
+                <TableHead className="text-purple-900">
+                  Institution Type
+                </TableHead>
                 <TableHead className="text-purple-900">Institution</TableHead>
                 <TableHead className="text-purple-900">Action</TableHead>
               </TableRow>
@@ -381,7 +406,7 @@ export default function Dashboard() {
             <TableBody>
               {loading ? (
                 <TableRow className="odd:bg-white even:bg-gray-50 hover:bg-gray-100 transition">
-                  <TableCell colSpan={7} className="text-center">
+                  <TableCell colSpan={9} className="text-center">
                     Loading users...
                   </TableCell>
                 </TableRow>
@@ -429,15 +454,18 @@ export default function Dashboard() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="rounded-md border border-blue-500 text-blue-500 hover:bg-blue-100"
+                          className="rounded-md border  border-purple-500 text-purple-500 hover:bg-purple-100"
                           title="View Payment Details"
                         >
-                          <DollarSign className="w-4 h-4" />{" "}
+                          <Banknote className="w-6 h-6" />{" "}
                           {/* You'll need to import DollarSign */}
                         </Button>
                       </Link>
                     </TableCell>
 
+                    <TableCell className="min-w-[150px]">
+                      {user.institution_type || "-"}
+                    </TableCell>
                     <TableCell className="min-w-[200px]">
                       {user.institution_name || "-"}
                     </TableCell>
