@@ -274,23 +274,6 @@ export default function Globalboard() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Challenge Type Filter */}
-            <select
-              value={selectedChallengeType}
-              onChange={handleChallengeTypeChange}
-              className="p-2 border rounded"
-            >
-              <option value="">Global Board (Current)</option>
-              {challengeTypes.map((type) => (
-                <option key={type} value={type}>
-                  {type
-                    .replace(/_/g, " ")
-                    .replace(/\b\w/g, (char) => char.toUpperCase())}{" "}
-                  Challenges
-                </option>
-              ))}
-            </select>
-
             {/* Monthly/Yearly Filter */}
             {!showFilterInputs ? (
               <Button
@@ -377,6 +360,25 @@ export default function Globalboard() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Challenge Type Dropdown at top-left */}
+      <div className="mb-4">
+        <select
+          value={selectedChallengeType}
+          onChange={handleChallengeTypeChange}
+          className="p-2 border rounded"
+        >
+          <option value="">Global Board (Current)</option>
+          {challengeTypes.map((type) => (
+            <option key={type} value={type}>
+              {type
+                .replace(/_/g, " ")
+                .replace(/\b\w/g, (char) => char.toUpperCase())}{" "}
+              Challenges
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Finalization Notice */}
@@ -467,7 +469,7 @@ export default function Globalboard() {
                       className="w-5 h-5 text-gray-500 bg-gray-200 rounded-full p-1 cursor-pointer"
                     />
                   </TableCell>
-                  <TableCell>${user.prize_money}</TableCell>
+                  <TableCell>Tk. {user.prize_money}</TableCell>
                 </TableRow>
               );
             })}
