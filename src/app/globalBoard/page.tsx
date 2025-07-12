@@ -18,6 +18,10 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import Papa from "papaparse";
+import { saveAs } from "file-saver";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const API_URL = `${baseUrl}/api/global-board`;
 const CHALLENGES_API_URL = `${baseUrl}/api/challenges/all-challenges-result`;
@@ -87,6 +91,21 @@ type AllChallengesResult = {
   mega: Challenge[];
   special_event: Challenge[];
   weekly: Challenge[];
+};
+
+const downloadCSV = (data: any[], filename: string) => {
+  const csv = Papa.unparse(data);
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  saveAs(blob, `${filename}.csv`);
+};
+
+const downloadPDF = (data: any[], columns: string[], filename: string) => {
+  const doc = new jsPDF();
+  autoTable(doc, {
+    head: [columns],
+    body: data.map((row) => columns.map((col) => row[col] ?? "N/A")),
+  });
+  doc.save(`${filename}.pdf`);
 };
 
 export default function Globalboard() {
@@ -247,6 +266,23 @@ export default function Globalboard() {
     }
   };
 
+  const getColumnsForSortingKey = (key: string): string[] => {
+    switch (key) {
+      case "byTotalPoints":
+        return ["position", "userName", "totalPoints"];
+      case "byPracticePassed":
+        return ["position", "userName", "practicePassed"];
+      case "byMonthlySubmitTime":
+        return ["position", "userName", "monthlySubmitTime"];
+      case "byWeeklySubmitTime":
+        return ["position", "userName", "weeklySubmitTime"];
+      case "byPreviousRank":
+        return ["position", "userName", "previousRank"];
+      default:
+        return ["position", "userName"];
+    }
+  };
+
   return (
     <div className="p-6 w-full min-h-screen bg-gray-50">
       {/* Header */}
@@ -254,6 +290,39 @@ export default function Globalboard() {
         <h1 className="text-3xl sm:text-4xl font-extrabold text-purple-900 mb-4 sm:mb-0">
           LeaderBoard
         </h1>
+
+        <div className="flex gap-2 mt-2">
+          <Button
+            className="bg-green-700 text-white"
+            onClick={() => downloadCSV(users, "leaderboard")}
+          >
+            Download CSV
+          </Button>
+          <Button
+            className="bg-red-700 text-white"
+            onClick={() =>
+              downloadPDF(
+                users,
+                selectedChallengeType === ""
+                  ? [
+                      "position",
+                      "userName",
+                      "totalPoints",
+                      "practicePassed",
+                      "previousRank",
+                      "monthlySubmitTime",
+                      "weeklySubmitTime",
+                      "eligibilityAchievedAt",
+                      "prize_money",
+                    ]
+                  : ["position", "userName", "totalPoints", "prize_money"],
+                "leaderboard"
+              )
+            }
+          >
+            Download PDF
+          </Button>
+        </div>
 
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
@@ -280,7 +349,7 @@ export default function Globalboard() {
                 onClick={() => setShowFilterInputs(true)}
                 className="flex items-center gap-2 bg-purple-600 text-white"
               >
-                Monthly <Filter className="w-4 h-4" />
+                Filter <Filter className="w-4 h-4" />
               </Button>
             ) : (
               <>
@@ -564,6 +633,28 @@ export default function Globalboard() {
                   <h3 className="text-lg font-medium text-gray-700 mb-4 border-l-4 border-blue-500 pl-3 capitalize">
                     {key.replace(/([A-Z])/g, " $1")}
                   </h3>
+
+                  <div className="flex justify-end gap-2 mb-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => downloadCSV(list, `${key}_sorting`)}
+                    >
+                      Download CSV
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() =>
+                        downloadPDF(
+                          list,
+                          getColumnsForSortingKey(key),
+                          `${key}_sorting`
+                        )
+                      }
+                    >
+                      Download PDF
+                    </Button>
+                  </div>
+
                   <Table className="w-full text-sm text-left">
                     <TableHeader>
                       <TableRow className="bg-gray-100">
