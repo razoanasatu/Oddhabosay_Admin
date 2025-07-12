@@ -20,6 +20,7 @@ import {
 import { useEffect, useState } from "react";
 
 const API_URL = `${baseUrl}/api/global-board`;
+const CHALLENGES_API_URL = `${baseUrl}/api/challenges/all-challenges-result`;
 
 type User = {
   userId: number;
@@ -31,6 +32,12 @@ type User = {
   monthly_eligibility: number;
   weekly_eligibility: number;
   numericRank: number;
+  // New fields from /api/global-board
+  eligibilityAchievedAt: string | null;
+  monthlySubmitTime: string | null;
+  weeklySubmitTime: string | null;
+  practicePassed: number;
+  previousRank: number | null;
 };
 
 type SortingItem = {
@@ -53,6 +60,35 @@ type Sorting = {
   byPreviousRank: SortingItem[];
 };
 
+type ChallengeResult = {
+  userId: number;
+  userName: string;
+  userImage: string;
+  score: number;
+  rank: number;
+  position: string;
+  prize_money: number;
+  prize_money_distribution_status: boolean;
+  lastSameTypeChallenge: string | null;
+  monthlyPracticeCountBefore: number;
+  eligibilityDate: string | null;
+};
+
+type Challenge = {
+  challengeId: number;
+  challengeType: string;
+  startDate: string;
+  endDate: string;
+  results: ChallengeResult[];
+};
+
+type AllChallengesResult = {
+  monthly: Challenge[];
+  mega: Challenge[];
+  special_event: Challenge[];
+  weekly: Challenge[];
+};
+
 export default function Globalboard() {
   const [users, setUsers] = useState<User[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,6 +105,13 @@ export default function Globalboard() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showSortingModal, setShowSortingModal] = useState(false);
 
+  // New state for challenge type filter
+  const [challengeTypes, setChallengeTypes] = useState<string[]>([]);
+  const [selectedChallengeType, setSelectedChallengeType] =
+    useState<string>("");
+  const [allChallengesData, setAllChallengesData] =
+    useState<AllChallengesResult | null>(null);
+
   const rowsPerPage = 10;
   const totalPages = Math.ceil(users.length / rowsPerPage);
   const indexOfLastRow = currentPage * rowsPerPage;
@@ -77,9 +120,11 @@ export default function Globalboard() {
 
   useEffect(() => {
     fetchCurrentBoard();
+    fetchAllChallengeTypes();
   }, []);
 
   const fetchCurrentBoard = () => {
+    setSelectedChallengeType(""); // Reset challenge type filter when fetching global board
     fetch(API_URL)
       .then((res) => res.json())
       .then((data) => {
@@ -93,6 +138,69 @@ export default function Globalboard() {
         }
       })
       .catch((err) => console.error("Error fetching leaderboard:", err));
+  };
+
+  const fetchAllChallengeTypes = () => {
+    fetch(CHALLENGES_API_URL)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data) {
+          setAllChallengesData(data.data);
+          const types = Object.keys(data.data);
+          setChallengeTypes(types);
+        }
+      })
+      .catch((err) => console.error("Error fetching challenge types:", err));
+  };
+
+  const handleChallengeTypeChange = (
+    event: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const type = event.target.value;
+    setSelectedChallengeType(type);
+    setCurrentPage(1); // Reset to first page on filter change
+
+    if (type === "") {
+      fetchCurrentBoard(); // Show global board if "All Challenges" is selected
+      return;
+    }
+
+    if (
+      allChallengesData &&
+      allChallengesData[type as keyof AllChallengesResult]
+    ) {
+      const challengesOfType = allChallengesData[
+        type as keyof AllChallengesResult
+      ] as Challenge[];
+      if (challengesOfType.length > 0) {
+        // For simplicity, we'll take the results of the *latest* challenge of that type
+        // You might want to implement a more sophisticated way to choose which challenge's results to show
+        const latestChallengeResults = challengesOfType[0].results;
+
+        // Map ChallengeResult to User type for consistent display
+        const mappedUsers: User[] = latestChallengeResults.map((result) => ({
+          userId: result.userId,
+          userName: result.userName,
+          userImage: result.userImage,
+          totalPoints: result.score, // Using score as totalPoints for challenge results
+          position: result.position,
+          prize_money: result.prize_money,
+          monthly_eligibility: result.monthlyPracticeCountBefore, // Using monthlyPracticeCountBefore as monthly_eligibility
+          weekly_eligibility: 0, // Not available in this API, set to 0 or null
+          numericRank: result.rank,
+          eligibilityAchievedAt: result.eligibilityDate,
+          monthlySubmitTime: null, // Not available in this API
+          weeklySubmitTime: null, // Not available in this API
+          practicePassed: result.monthlyPracticeCountBefore, // Assuming this is the relevant "practicePassed"
+          previousRank: null, // Not available in this API
+        }));
+        setUsers(mappedUsers);
+      } else {
+        setUsers([]); // No results for this challenge type
+      }
+    } else {
+      setUsers([]); // No data found for selected type
+    }
   };
 
   const handleResetBoard = async () => {
@@ -157,6 +265,24 @@ export default function Globalboard() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Challenge Type Filter */}
+            <select
+              value={selectedChallengeType}
+              onChange={handleChallengeTypeChange}
+              className="p-2 border rounded"
+            >
+              <option value="">Global Board (Current)</option>
+              {challengeTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (char) => char.toUpperCase())}{" "}
+                  Challenges
+                </option>
+              ))}
+            </select>
+
+            {/* Monthly/Yearly Filter */}
             {!showFilterInputs ? (
               <Button
                 onClick={() => setShowFilterInputs(true)}
@@ -253,13 +379,22 @@ export default function Globalboard() {
       )}
 
       {/* Table */}
-      <div className="overflow-auto relative">
+      <div className="overflow-x-auto relative">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Position</TableHead>
               <TableHead>Participant</TableHead>
               <TableHead>Points</TableHead>
+              {selectedChallengeType === "" && ( // Only show these for Global Board
+                <>
+                  <TableHead>Practice Passed</TableHead>
+                  <TableHead>Prev. Rank</TableHead>
+                  <TableHead>Monthly Submit Time</TableHead>
+                  <TableHead>Weekly Submit Time</TableHead>
+                  <TableHead>Eligibility Achieved At</TableHead>
+                </>
+              )}
               <TableHead>Eligibility</TableHead>
               <TableHead>Prize</TableHead>
             </TableRow>
@@ -293,6 +428,29 @@ export default function Globalboard() {
                     </div>
                   </TableCell>
                   <TableCell>{user.totalPoints}</TableCell>
+                  {selectedChallengeType === "" && ( // Only show these for Global Board
+                    <>
+                      <TableCell>{user.practicePassed}</TableCell>
+                      <TableCell>{user.previousRank ?? "N/A"}</TableCell>
+                      <TableCell>
+                        {user.monthlySubmitTime
+                          ? new Date(user.monthlySubmitTime).toLocaleString()
+                          : "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        {user.weeklySubmitTime
+                          ? new Date(user.weeklySubmitTime).toLocaleString()
+                          : "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        {user.eligibilityAchievedAt
+                          ? new Date(
+                              user.eligibilityAchievedAt
+                            ).toLocaleString()
+                          : "N/A"}
+                      </TableCell>
+                    </>
+                  )}
                   <TableCell>
                     <HelpCircle
                       onMouseEnter={() => setSelectedUser(user)}
@@ -304,6 +462,16 @@ export default function Globalboard() {
                 </TableRow>
               );
             })}
+            {currentRows.length === 0 && (
+              <TableRow>
+                <TableCell
+                  colSpan={selectedChallengeType === "" ? 10 : 5}
+                  className="text-center py-4 text-gray-500"
+                >
+                  No data available for this selection.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
