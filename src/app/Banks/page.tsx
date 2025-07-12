@@ -100,10 +100,11 @@ const BankInfoManagement = () => {
     setError("");
 
     try {
+      // Convert the comma-separated string to an array
       const methodsArray = formData.supportedMethods
         .split(",")
-        .map((method) => method.trim())
-        .filter((method) => method !== "");
+        .map((method) => method.trim()) // Clean up extra spaces
+        .filter((method) => method.length > 0); // Filter out empty strings
 
       const formDataToSend = new FormData();
       formDataToSend.append("name", formData.name);
@@ -165,10 +166,11 @@ const BankInfoManagement = () => {
     setError("");
 
     try {
+      // Convert the comma-separated string to an array
       const methodsArray = formData.supportedMethods
         .split(",")
-        .map((method) => method.trim())
-        .filter((method) => method !== "");
+        .map((method) => method.trim()) // Clean up extra spaces
+        .filter((method) => method !== ""); // Filter out empty strings
 
       let response;
       if (formData.imageFile) {
@@ -179,7 +181,7 @@ const BankInfoManagement = () => {
         formDataToSend.append(
           "supported_methods",
           JSON.stringify(methodsArray)
-        );
+        ); // Send as JSON string
         formDataToSend.append("image", formData.imageFile);
 
         response = await fetch(
@@ -194,7 +196,7 @@ const BankInfoManagement = () => {
         const payload = {
           name: formData.name,
           type: formData.type,
-          supported_methods: methodsArray,
+          supported_methods: methodsArray, // Send as an array
         };
 
         response = await fetch(
@@ -433,7 +435,7 @@ const BankInfoManagement = () => {
                       {bank.type}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {bank.supported_methods.join(", ")}
+                      <p>{bank.supported_methods.join(", ")}</p>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span
@@ -527,7 +529,7 @@ const BankInfoManagement = () => {
 
               <div className="mb-4">
                 <label
-                  htmlFor="supportedMethods"
+                  htmlFor="edit-supportedMethods"
                   className="block text-sm font-medium text-gray-700 mb-2"
                 >
                   Supported Methods (comma-separated)
@@ -545,7 +547,6 @@ const BankInfoManagement = () => {
                   List payment methods, separated by commas.
                 </p>
               </div>
-
               <div className="mb-6">
                 <label
                   htmlFor="imageFile"
