@@ -112,6 +112,12 @@ export default function Globalboard() {
   const [allChallengesData, setAllChallengesData] =
     useState<AllChallengesResult | null>(null);
 
+  // New state for reset modal
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetMessage, setResetMessage] = useState(
+    "🏆 This month's global leaderboard is finalized! Congratulations to all the winners!"
+  );
+
   const rowsPerPage = 10;
   const totalPages = Math.ceil(users.length / rowsPerPage);
   const indexOfLastRow = currentPage * rowsPerPage;
@@ -203,21 +209,21 @@ export default function Globalboard() {
     }
   };
 
-  const handleResetBoard = async () => {
-    if (
-      !window.confirm(
-        "Are you sure you want to finalize the results and reset the board?"
-      )
-    )
-      return;
-
+  const confirmResetBoard = async () => {
     try {
+      const requestBody: { result_finalization: boolean; message?: string } = {
+        result_finalization: true,
+      };
+      if (resetMessage.trim() !== "") {
+        requestBody.message = resetMessage.trim();
+      }
+
       const response = await fetch(API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ result_finalization: true }),
+        body: JSON.stringify(requestBody),
       });
 
       const result = await response.json();
@@ -225,11 +231,13 @@ export default function Globalboard() {
         alert("Board has been reset and prizes distributed.");
         fetchCurrentBoard();
       } else {
-        alert("Reset failed.");
+        alert("Reset failed: " + (result.message || "Unknown error"));
       }
     } catch (err) {
       console.error("Error resetting board:", err);
       alert("An error occurred while resetting the board.");
+    } finally {
+      setShowResetModal(false); // Close the modal regardless of success/failure
     }
   };
 
@@ -249,8 +257,9 @@ export default function Globalboard() {
 
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
+            {/* Changed onClick to show modal */}
             <Button
-              onClick={handleResetBoard}
+              onClick={() => setShowResetModal(true)}
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               Admin Reset
@@ -504,7 +513,7 @@ export default function Globalboard() {
       {/* Hover Modal */}
       {selectedUser && (
         <div
-          onMouseEnter={() => selectedUser && setSelectedUser(selectedUser)}
+          onMouseEnter={() => setSelectedUser(selectedUser)}
           onMouseLeave={() => setSelectedUser(null)}
           className="fixed inset-0 z-50 flex items-center justify-center bg-transparent"
         >
@@ -624,6 +633,50 @@ export default function Globalboard() {
                 onClick={() => setShowSortingModal(false)}
               >
                 Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Admin Reset Confirmation Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-white/70 backdrop-blur-sm">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md border border-gray-200">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              Confirm Board Reset
+            </h2>
+            <p className="text-gray-700 mb-4">
+              Are you sure you want to finalize the results and reset the board?
+              This action will distribute prizes and cannot be undone.
+            </p>
+            <div className="mb-4">
+              <label
+                htmlFor="resetMessage"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Optional Message for Users:
+              </label>
+              <textarea
+                id="resetMessage"
+                className="w-full p-2 border border-gray-300 rounded-md resize-y min-h-[80px]"
+                value={resetMessage}
+                onChange={(e) => setResetMessage(e.target.value)}
+                placeholder="e.g., Congratulations to all winners!"
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowResetModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-red-600 hover:bg-red-700 text-white"
+                onClick={confirmResetBoard}
+              >
+                Confirm Reset
               </Button>
             </div>
           </div>
