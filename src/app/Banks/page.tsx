@@ -413,7 +413,7 @@ const BankInfoManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {bank.image ? (
                         <img
-                          src={bank.image}
+                          src={`${baseUrl}/uploads/${bank.image}`}
                           alt={bank.name}
                           className="h-10 w-10 object-contain rounded-full border border-gray-200"
                           onError={(e) => {
