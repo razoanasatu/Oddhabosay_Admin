@@ -16,22 +16,30 @@ import {
 
 const navItems = [
   { label: "Dashboard", href: "/" },
-  { label: "All Users", href: "/allUsers" },
   { label: "LeaderBoard", href: "/globalBoard" },
+  { label: "All Users", href: "/allUsers" },
+
   { label: "Challenge", href: "/addExam" },
-  { label: "Subject", href: "/addSubjects" },
   { label: "Questions", href: "/addQuestion" },
-  { label: "Rules", href: "/ruleId" },
+  { label: "Subject", href: "/addSubjects" },
   { label: "Challenge Requirements", href: "/challengeRequirement" },
+
   { label: "Prize Details", href: "/prizeDetails" },
   { label: "Special Events", href: "/createSpecialEvent" },
-  { label: "Win a Laptop", href: "/winLaptopDetails" },
   { label: "Eligibility Details", href: "/eligibilityDetails" },
-  { label: "Notifications", href: "/notifications" },
-  { label: "Banks", href: "/Banks" },
-  { label: "Transaction", href: "/transaction" },
+  { label: "Win a Laptop", href: "/winLaptopDetails" },
   { label: "Participation", href: "/participationPage" },
+
+  { label: "Notifications", href: "/notifications" },
+  { label: "Transaction", href: "/transaction" },
+  { label: "Banks", href: "/Banks" },
+  { label: "Rules", href: "/ruleId" },
+
   { label: "Social Media", href: "/socialMedia" },
+  { label: "Terms of Service", href: "/services" },
+  { label: "Breaking News", href: "/breakingNews" },
+  // { label: "Contact Us", href: "/contact" },
+  { label: "About Us", href: "/aboutUs" },
   { label: "Log Out", href: "#logout" },
 ];
 
@@ -91,7 +99,7 @@ export default function AdminLayout({
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 flex flex-col py-6 px-4 space-y-2 overflow-y-auto">
+        <nav className="flex-1 flex flex-col py-6 px-12 space-y-2 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
 

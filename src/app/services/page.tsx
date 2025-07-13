@@ -4,8 +4,8 @@ import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify"; // Assuming react-toastify is set up
 
-// Type definition for About Us data
-type AboutUsData = {
+// Type definition for Terms of Service data
+type TermsOfServiceData = {
   id: number;
   title: string;
   content: string;
@@ -14,9 +14,10 @@ type AboutUsData = {
   updatedAt: string;
 };
 
-const AboutUsManagement = () => {
-  // State variables for managing About Us data and UI
-  const [aboutUsData, setAboutUsData] = useState<AboutUsData | null>(null);
+const TermsOfServiceManagement = () => {
+  // State variables for managing Terms of Service data and UI
+  const [termsOfServiceData, setTermsOfServiceData] =
+    useState<TermsOfServiceData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -24,39 +25,41 @@ const AboutUsManagement = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   /**
-   * Fetches the About Us content from the API.
+   * Fetches the Terms of Service content from the API.
    */
-  const fetchAboutUs = async () => {
+  const fetchTermsOfService = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${baseUrl}/api/about-us`);
+      const response = await fetch(`${baseUrl}/api/terms`);
       const data = await response.json();
-      if (data.success && data.data && data.data.aboutUs) {
-        setAboutUsData(data.data.aboutUs);
-        setTitle(data.data.aboutUs.title);
-        setContent(data.data.aboutUs.content);
+      if (data.success && data.data && data.data.termsOfService) {
+        setTermsOfServiceData(data.data.termsOfService);
+        setTitle(data.data.termsOfService.title);
+        setContent(data.data.termsOfService.content);
       } else {
-        toast.error(data.message || "Failed to fetch About Us content.");
-        setError(data.message || "Failed to fetch About Us content.");
+        toast.error(
+          data.message || "Failed to fetch Terms of Service content."
+        );
+        setError(data.message || "Failed to fetch Terms of Service content.");
       }
     } catch (err) {
-      console.error("Error fetching About Us:", err);
-      toast.error("Error fetching About Us content.");
-      setError("Error fetching About Us content.");
+      console.error("Error fetching Terms of Service:", err);
+      toast.error("Error fetching Terms of Service content.");
+      setError("Error fetching Terms of Service content.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch About Us content on component mount
+  // Fetch Terms of Service content on component mount
   useEffect(() => {
-    fetchAboutUs();
+    fetchTermsOfService();
   }, []);
 
   /**
-   * Handles saving (updating) the About Us content.
-   * Uses POST method as per clarification that it handles both create and update.
+   * Handles saving (updating) the Terms of Service content.
+   * Uses POST method for both create and update as per API specification.
    */
   const handleSave = async () => {
     if (!title || !content) {
@@ -66,8 +69,8 @@ const AboutUsManagement = () => {
 
     setIsSaving(true);
     try {
-      const response = await fetch(`${baseUrl}/api/about-us`, {
-        method: "POST", // Changed from PUT to POST as per user's clarification
+      const response = await fetch(`${baseUrl}/api/terms`, {
+        method: "POST", // Using POST for both create and update
         headers: {
           "Content-Type": "application/json",
         },
@@ -75,15 +78,17 @@ const AboutUsManagement = () => {
       });
 
       if (response.ok) {
-        toast.success("About Us content updated successfully.");
-        fetchAboutUs(); // Re-fetch to ensure the displayed data is fresh
+        toast.success("Terms of Service content updated successfully.");
+        fetchTermsOfService(); // Re-fetch to ensure the displayed data is fresh
       } else {
         const data = await response.json();
-        toast.error(data.message || "Failed to update About Us content.");
+        toast.error(
+          data.message || "Failed to update Terms of Service content."
+        );
       }
     } catch (err) {
-      console.error("Error updating About Us:", err);
-      toast.error("Error updating About Us content.");
+      console.error("Error updating Terms of Service:", err);
+      toast.error("Error updating Terms of Service content.");
     } finally {
       setIsSaving(false);
     }
@@ -94,7 +99,7 @@ const AboutUsManagement = () => {
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-6 sm:p-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl sm:text-4xl font-extrabold text-purple-900">
-            About Us Management
+            Terms of Service Management
           </h1>
         </div>
 
@@ -110,40 +115,40 @@ const AboutUsManagement = () => {
 
         {loading ? (
           <div className="text-center py-10 text-gray-600">
-            Loading About Us content...
+            Loading Terms of Service content...
           </div>
         ) : (
           <div className="space-y-6">
             <div>
               <label
-                htmlFor="about-us-title"
+                htmlFor="terms-title"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Title
               </label>
               <input
                 type="text"
-                id="about-us-title"
+                id="terms-title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-800"
-                placeholder="Enter title for About Us section"
+                placeholder="Enter title for Terms of Service section"
               />
             </div>
             <div>
               <label
-                htmlFor="about-us-content"
+                htmlFor="terms-content"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
                 Content
               </label>
               <textarea
-                id="about-us-content"
+                id="terms-content"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 rows={10}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-800 resize-y"
-                placeholder="Enter detailed content for About Us section"
+                placeholder="Enter detailed content for Terms of Service section"
               ></textarea>
             </div>
             <div className="flex justify-end">
@@ -156,21 +161,21 @@ const AboutUsManagement = () => {
               </button>
             </div>
 
-            {aboutUsData && (
+            {termsOfServiceData && (
               <div className="mt-10 pt-6 border-t border-gray-200">
                 <h3 className="text-xl font-semibold text-purple-800 mb-4">
-                  Current About Us Content
+                  Current Terms of Service Content
                 </h3>
                 <div className="bg-gray-50 p-5 rounded-lg border border-gray-200 shadow-sm">
                   <p className="text-lg font-bold text-gray-900 mb-2">
-                    {aboutUsData.title}
+                    {termsOfServiceData.title}
                   </p>
                   <p className="text-gray-700 whitespace-pre-wrap">
-                    {aboutUsData.content}
+                    {termsOfServiceData.content}
                   </p>
                   <p className="text-xs text-gray-500 mt-4">
                     Last Updated:{" "}
-                    {new Date(aboutUsData.updatedAt).toLocaleString()}
+                    {new Date(termsOfServiceData.updatedAt).toLocaleString()}
                   </p>
                 </div>
               </div>
@@ -182,4 +187,4 @@ const AboutUsManagement = () => {
   );
 };
 
-export default AboutUsManagement;
+export default TermsOfServiceManagement;
