@@ -1743,6 +1743,7 @@ const ChallengeManagement = () => {
                     placeholder="Enter quiz time"
                   />
                 </div>
+
                 <div>
                   <label
                     htmlFor="deadline"
@@ -1752,41 +1753,77 @@ const ChallengeManagement = () => {
                   </label>
                   <input
                     type="date"
-                    id="deadline"
-                    name="deadline"
+                    id="deadlineDate"
+                    name="deadlineDate"
                     value={formData.deadline.split("T")[0]}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
+                  />
+                  <input
+                    type="time"
+                    id="deadlineTime"
+                    name="deadlineTime"
+                    value={
+                      formData.deadline.split("T")[1]
+                        ? formData.deadline.split("T")[1].substring(0, 5)
+                        : ""
+                    }
                     onChange={handleFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
                   <label
-                    htmlFor="start_datetime"
+                    htmlFor="start_datetime_date"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
                     Start Date <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
-                    id="start_datetime"
-                    name="start_datetime"
+                    id="start_datetime_date"
+                    name="start_datetime_date"
                     value={formData.start_datetime.split("T")[0]}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
+                  />
+                  <input
+                    type="time"
+                    id="start_datetime_time"
+                    name="start_datetime_time"
+                    value={
+                      formData.start_datetime.split("T")[1]
+                        ? formData.start_datetime.split("T")[1].substring(0, 5)
+                        : ""
+                    }
                     onChange={handleFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
                   <label
-                    htmlFor="end_datetime"
+                    htmlFor="end_datetime_date"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
                     End Date <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
-                    id="end_datetime"
-                    name="end_datetime"
+                    id="end_datetime_date"
+                    name="end_datetime_date"
                     value={formData.end_datetime.split("T")[0]}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mb-2"
+                  />
+                  <input
+                    type="time"
+                    id="end_datetime_time"
+                    name="end_datetime_time"
+                    value={
+                      formData.end_datetime.split("T")[1]
+                        ? formData.end_datetime.split("T")[1].substring(0, 5)
+                        : ""
+                    }
                     onChange={handleFormChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
