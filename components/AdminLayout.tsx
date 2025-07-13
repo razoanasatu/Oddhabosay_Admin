@@ -29,7 +29,9 @@ const navItems = [
   { label: "Eligibility Details", href: "/eligibilityDetails" },
   { label: "Notifications", href: "/notifications" },
   { label: "Banks", href: "/Banks" },
+  { label: "Transaction", href: "/transaction" },
   { label: "Participation", href: "/participationPage" },
+  { label: "Social Media", href: "/socialMedia" },
   { label: "Log Out", href: "#logout" },
 ];
 
