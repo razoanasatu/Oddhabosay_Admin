@@ -288,7 +288,7 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
-      <header className="bg-purple-900 text-white p-4 shadow-md">
+      <header className="bg-purple-900 rounded-sm text-white p-4 shadow-md">
         <div className="container mx-auto">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         </div>
@@ -445,7 +445,7 @@ export default function Dashboard() {
         </div>
       </main>
 
-      <footer className="bg-purple-900 text-white p-4 shadow-inner">
+      <footer className="bg-purple-900 rounded-sm text-white p-4 shadow-inner">
         <div className="container mx-auto text-center">
           <p>
             &copy; {new Date().getFullYear()} Admin Dashboard. All rights
