@@ -394,6 +394,7 @@ const ChallengeManagement = () => {
       const data = await response.json();
       if (response.ok && data.success) {
         setPrizeDetailsOptions(data.data);
+        console.log("Fetched prize details:", data.data); // Log the fetched data
       } else {
         console.error("Failed to fetch prize details:", data.message);
       }
@@ -637,11 +638,13 @@ const ChallengeManagement = () => {
         eventId: formData.eventId !== "" ? Number(formData.eventId) : undefined,
 
         // plural array field
-        prizeDetailsIds:
-          typeof formData.prizeDetailsId === "number" &&
-          !isNaN(formData.prizeDetailsId)
-            ? [formData.prizeDetailsId]
-            : [],
+        prizeDetailsIds: formData.prizeDetailsId
+          ? [Number(formData.prizeDetailsId)]
+          : [],
+        // Convert datetimes to UTC
+        deadline: toUTCISOString(formData.deadline),
+        start_datetime: toUTCISOString(formData.start_datetime),
+        end_datetime: toUTCISOString(formData.end_datetime),
       };
 
       if (formData.challenge_type === "special_event") {
@@ -784,6 +787,11 @@ const ChallengeManagement = () => {
           formData.challenge_type === "special_event" && formData.eventId !== ""
             ? Number(formData.eventId)
             : undefined,
+
+        // Convert datetimes to UTC
+        deadline: toUTCISOString(formData.deadline),
+        start_datetime: toUTCISOString(formData.start_datetime),
+        end_datetime: toUTCISOString(formData.end_datetime),
       };
 
       if (formData.challenge_type !== "special_event") {
@@ -874,6 +882,7 @@ const ChallengeManagement = () => {
   // MODIFIED: Handle edit to populate `selectedQuestionsDetails`
   const handleEdit = async (challenge: Challenge) => {
     console.log("Editing challenge:", challenge);
+    console.log("Challenge prize details:", challenge.prizeDetails);
 
     try {
       setSelectedChallenge(challenge);
@@ -932,6 +941,13 @@ const ChallengeManagement = () => {
       console.error("Error in handleEdit:", err);
       setError("Failed to load challenge for editing.");
     }
+  };
+
+  const toUTCISOString = (localDateTimeStr: string) => {
+    const localDate = new Date(localDateTimeStr);
+    return new Date(
+      localDate.getTime() - localDate.getTimezoneOffset() * 60000
+    ).toISOString();
   };
 
   //When Questions added directly
@@ -1072,7 +1088,7 @@ const ChallengeManagement = () => {
         )}
 
         {/* Challenges Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
