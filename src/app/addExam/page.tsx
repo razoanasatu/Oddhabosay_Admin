@@ -1117,6 +1117,10 @@ const ChallengeManagement = () => {
                   Seats
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Registered <br />
+                  Users
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Active
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1178,6 +1182,11 @@ const ChallengeManagement = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {challenge.available_seats}/{challenge.total_seats}
                       </td>
+
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {challenge.registered_users}
+                      </td>
+
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {challenge.active_status ? (
                           <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
@@ -1200,16 +1209,26 @@ const ChallengeManagement = () => {
                       </td>
 
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex gap-2 justify-end">
-                          <button
-                            onClick={() =>
-                              router.push(`/challengeResult/${challenge.id}`)
-                            }
-                            className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors cursor-pointer"
-                            title="View Challenge Result"
-                          >
-                            <Eye size={20} />
-                          </button>
+                        <div className="flex gap-2 justify-end items-center">
+                          {challenge.registered_users > 0 &&
+                            challenge.users.some(
+                              (Index: any) =>
+                                Index.challenge_completion_status == "completed"
+                            ) &&
+                            new Date(challenge.end_datetime).getTime() <
+                              Date.now() && (
+                              <button
+                                onClick={() =>
+                                  router.push(
+                                    `/challengeResult/${challenge.id}`
+                                  )
+                                }
+                                className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors cursor-pointer"
+                                title="View Challenge Result"
+                              >
+                                <Eye size={20} />
+                              </button>
+                            )}
 
                           <button
                             onClick={() => handleEdit(challenge)}
