@@ -28,7 +28,7 @@ const navItems = [
   { label: "Special Events", href: "/createSpecialEvent" },
   { label: "Eligibility Details", href: "/eligibilityDetails" },
   { label: "Win a Laptop", href: "/winLaptopDetails" },
-  { label: "Participation", href: "/participationPage" },
+  { label: "Participants", href: "/participationPage" },
 
   { label: "Notifications", href: "/notifications" },
   { label: "Transaction", href: "/transaction" },
