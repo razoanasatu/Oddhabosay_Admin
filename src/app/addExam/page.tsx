@@ -1067,13 +1067,13 @@ const ChallengeManagement = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">
+        <div className="flex justify-between items-center bg-gray-50 font-sans">
+          <h1 className="text-4xl font-bold mb-8 text-purple-900 border-b-2 border-purple-200 pb-4">
             Challenge Management
           </h1>
           <button
             onClick={handleCreate}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            className="bg-purple-700 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-4 transition-colors"
           >
             <Plus size={20} />
             Add Challenge
@@ -1090,43 +1090,43 @@ const ChallengeManagement = () => {
         {/* Challenges Table */}
         <div className="bg-white rounded-lg shadow overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+            <thead className="bg-purple-50 sticky top-0 z-10">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-purple-900 font-bold text-sm uppercase tracking-wider">
                   ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-purple-900 font-bold text-sm uppercase tracking-wider">
                   Type
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-purple-900 font-bold text-sm uppercase tracking-wider">
                   Event Title
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-purple-900 font-bold text-sm uppercase tracking-wider">
                   Fee
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-purple-900 font-bold text-sm uppercase tracking-wider">
                   Quiz Time (min)
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-purple-900 font-bold text-sm uppercase tracking-wider">
                   Start Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-purple-900 font-bold text-sm uppercase tracking-wider">
                   End Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-purple-900 font-bold text-sm uppercase tracking-wider">
                   Seats
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-purple-900 font-bold text-sm uppercase tracking-wider">
                   Registered <br />
                   Users
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-purple-900 font-bold text-sm uppercase tracking-wider">
                   Active
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-purple-900 font-bold text-sm uppercase tracking-wider">
                   Upload Questions
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-center text-purple-900 font-bold text-sm uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
