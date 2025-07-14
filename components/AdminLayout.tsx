@@ -1,10 +1,9 @@
 "use client";
-
 import clsx from "clsx";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { destroyCookie } from "nookies";
+import { destroyCookie, parseCookies } from "nookies";
 import { useState } from "react";
 import {
   FaBars,
@@ -13,6 +12,18 @@ import {
   FaSignOutAlt,
   FaTimes,
 } from "react-icons/fa"; // Added FaSignOutAlt, removed FaUserCircle as it wasn't used
+
+const cookies = parseCookies();
+let email = "Admin"; // fallback value
+
+try {
+  const user = cookies.user ? JSON.parse(cookies.user) : null;
+  if (user?.email) {
+    email = user.email;
+  }
+} catch (e) {
+  console.error("Failed to parse user cookie:", e);
+}
 
 const navItems = [
   { label: "Dashboard", href: "/" },
@@ -189,7 +200,7 @@ export default function AdminLayout({
                 {" "}
                 {/* Hide name on very small screens */}
                 <p className="text-purple-700 font-semibold text-base group-hover:text-purple-900 transition-colors duration-200">
-                  Rashidatul Kobra
+                  {email}
                 </p>
                 <p className="text-sm text-gray-600">Admin</p>
               </div>
