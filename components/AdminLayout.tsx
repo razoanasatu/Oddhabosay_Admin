@@ -190,11 +190,11 @@ export default function AdminLayout({
 
             <div className="flex items-center space-x-3 cursor-pointer group">
               <Image
-                src="/profile.png" // Ensure this path is correct
+                src="/profile.jpg"
                 alt="User Profile"
-                width={44} // Slightly larger profile image
+                width={44}
                 height={44}
-                className="rounded-full object-cover border-2 border-purple-300 group-hover:border-purple-500 transition-colors duration-200 shadow-md"
+                className="rounded-full object-cover overflow-hidden border-2 border-purple-300 group-hover:border-purple-500 transition-colors duration-200 shadow-md"
               />
               <div className="leading-tight hidden sm:block">
                 {" "}
