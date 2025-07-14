@@ -1171,19 +1171,19 @@ const ChallengeManagement = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {challenge.quiz_time}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {new Date(
                           challenge.start_datetime
                         ).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {new Date(challenge.end_datetime).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {challenge.available_seats}/{challenge.total_seats}
                       </td>
 
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {challenge.registered_users}
                       </td>
 
@@ -1223,7 +1223,7 @@ const ChallengeManagement = () => {
                                     `/challengeResult/${challenge.id}`
                                   )
                                 }
-                                className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors cursor-pointer"
+                                className="text-purple-700 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors cursor-pointer"
                                 title="View Challenge Result"
                               >
                                 <Eye size={20} />
@@ -1232,7 +1232,7 @@ const ChallengeManagement = () => {
 
                           <button
                             onClick={() => handleEdit(challenge)}
-                            className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors cursor-pointer"
+                            className="text-purple-700 hover:text-blue-800 p-1 rounded hover:bg-blue-50 transition-colors cursor-pointer"
                             title="Edit Challenge"
                           >
                             <Edit size={16} />
@@ -1240,7 +1240,7 @@ const ChallengeManagement = () => {
 
                           <button
                             onClick={() => handleDelete(challenge)}
-                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors cursor-pointer"
+                            className="text-red-700 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors cursor-pointer"
                             title="Delete Challenge"
                           >
                             <Trash2 size={16} />
