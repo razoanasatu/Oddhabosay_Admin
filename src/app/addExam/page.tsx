@@ -1461,12 +1461,12 @@ const ChallengeManagement = () => {
                 </div>
                 {/* New Question Selection Section */}
                 <div>
-                  <label
+                  {/* <label
                     htmlFor="questionIds"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
                     Questions <span className="text-red-500">*</span>
-                  </label>
+                  </label> */}
 
                   {/* Display selected questions as tags */}
                   {selectedQuestionsDetails.length > 0 && (
@@ -1689,14 +1689,14 @@ const ChallengeManagement = () => {
               <div className="p-6 border-t flex gap-3 justify-end">
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="px-4 py-2 bg-red-400 text-white rounded-lg hover:bg-red-400 disabled:opacity-95 disabled:cursor-not-allowed transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={createChallenge}
                   disabled={loading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {loading ? "Creating..." : "Create"}
                 </button>
@@ -2138,7 +2138,7 @@ const ChallengeManagement = () => {
                 <button
                   onClick={updateChallenge}
                   disabled={loading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {loading ? "Updating..." : "Update"}
                 </button>

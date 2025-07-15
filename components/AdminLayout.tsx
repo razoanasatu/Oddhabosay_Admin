@@ -49,7 +49,7 @@ const navItems = [
   { label: "Social Media", href: "/socialMedia" },
   { label: "Terms of Service", href: "/services" },
   { label: "Breaking News", href: "/breakingNews" },
-  // { label: "Contact Us", href: "/contact" },
+  { label: "Contact Us", href: "/contact" },
   { label: "About Us", href: "/aboutUs" },
   { label: "Log Out", href: "#logout" },
 ];
