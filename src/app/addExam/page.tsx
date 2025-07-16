@@ -1947,8 +1947,8 @@ const ChallengeManagement = () => {
 
                 {/* Render the QuestionSelector component as a modal/pop-up (place this outside your form but within your ChallengeManagement component's render method) */}
                 {/* This part remains the same as in your previous implementation and should be placed
-    once within the ChallengeManagement component, not duplicated for create and edit forms.
-    It's controlled by `isQuestionSelectorOpen` state. */}
+                once within the ChallengeManagement component, not duplicated for create and edit forms.
+                It's controlled by `isQuestionSelectorOpen` state. */}
                 {isQuestionSelectorOpen && (
                   <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 p-4">
                     <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl h-[90vh] overflow-hidden flex flex-col">

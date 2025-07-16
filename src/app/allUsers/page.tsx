@@ -85,6 +85,11 @@ export default function Dashboard() {
   const [customBroadcastMessage, setCustomBroadcastMessage] =
     React.useState("");
 
+  const [showFilteredBroadcastModal, setShowFilteredBroadcastModal] =
+    React.useState(false);
+  const [filteredBroadcastMessage, setFilteredBroadcastMessage] =
+    React.useState("");
+
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [userResults, setUserResults] = useState<any | null>(null);
   const [userStats, setUserStats] = useState<any | null>(null);
@@ -245,6 +250,28 @@ export default function Dashboard() {
     } finally {
       setShowBroadcastModal(false);
       setCustomBroadcastMessage("");
+    }
+  };
+
+  const broadcastToFilteredUsers = async (message: string) => {
+    try {
+      const userIds = filteredUsers.map((u) => u.id);
+      if (userIds.length === 0) throw new Error("No users to notify.");
+      const res = await fetch(
+        `${baseUrl}/api/notifications/broadcast-multiple`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userIds, message }),
+        }
+      );
+      if (!res.ok) throw new Error("Failed to broadcast notification.");
+      toast.success("Notification sent to filtered users!");
+    } catch (error) {
+      toast.error((error as Error).message || "An error occurred.");
+    } finally {
+      setShowFilteredBroadcastModal(false);
+      setFilteredBroadcastMessage("");
     }
   };
 
@@ -413,6 +440,13 @@ export default function Dashboard() {
             className="bg-purple-700 text-white hover:bg-purple-800 px-5 py-2 rounded-md shadow-md transition-all duration-200 flex items-center gap-2"
           >
             <Bell className="w-5 h-5" /> Broadcast Message
+          </Button>
+
+          <Button
+            onClick={() => setShowFilteredBroadcastModal(true)}
+            className="bg-purple-600 text-white hover:bg-purple-700 px-5 py-2 rounded-md shadow-md transition-all duration-200 flex items-center gap-2"
+          >
+            <Bell className="w-5 h-5" /> Broadcast to Filtered Users
           </Button>
         </div>
       </div>
@@ -723,6 +757,53 @@ export default function Dashboard() {
                 }}
               >
                 Send Broadcast
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Broadcast to Filtered Users Modal */}
+      {showFilteredBroadcastModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 transition-colors text-xl font-bold"
+              onClick={() => setShowFilteredBroadcastModal(false)}
+              aria-label="Close filtered broadcast modal"
+            >
+              ✕
+            </button>
+            <h2 className="text-2xl font-bold text-purple-900 mb-5 border-b pb-3">
+              Broadcast to Filtered Users
+            </h2>
+            <textarea
+              value={filteredBroadcastMessage}
+              onChange={(e) => setFilteredBroadcastMessage(e.target.value)}
+              rows={5}
+              placeholder="Type your message for filtered users..."
+              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-800 resize-y text-base"
+              aria-label="Filtered broadcast message"
+            />
+            <div className="mt-6 flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowFilteredBroadcastModal(false)}
+                className="px-5 py-2 rounded-lg text-gray-700 border-gray-300 hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-purple-600 text-white hover:bg-purple-700 px-6 py-2 rounded-lg shadow-md transition-all"
+                onClick={() => {
+                  if (filteredBroadcastMessage.trim()) {
+                    broadcastToFilteredUsers(filteredBroadcastMessage);
+                  } else {
+                    toast.error("Please enter a message to broadcast.");
+                  }
+                }}
+              >
+                Send to Filtered Users
               </Button>
             </div>
           </div>

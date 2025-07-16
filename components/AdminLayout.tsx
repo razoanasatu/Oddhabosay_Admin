@@ -38,9 +38,10 @@ const navItems = [
   { label: "Prize Details", href: "/prizeDetails" },
   { label: "Special Events", href: "/createSpecialEvent" },
   { label: "Eligibility Details", href: "/eligibilityDetails" },
+  { label: "Exam Rules", href: "/examRule" },
   { label: "Win a Laptop", href: "/winLaptopDetails" },
   { label: "Participants", href: "/participationPage" },
-
+  { label: "Question Distribution", href: "/questionDistribution" },
   { label: "Notifications", href: "/notifications" },
   { label: "Transaction", href: "/transaction" },
   { label: "Banks", href: "/Banks" },
