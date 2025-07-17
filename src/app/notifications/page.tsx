@@ -615,7 +615,7 @@ const NotificationScheduleManagement = () => {
                     aria-required="true"
                   ></textarea>
                 </div>
-
+                {/* 
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -631,7 +631,7 @@ const NotificationScheduleManagement = () => {
                   >
                     Is Prize Money Related?
                   </label>
-                </div>
+                </div> */}
 
                 <div>
                   <label
@@ -779,7 +779,7 @@ const NotificationScheduleManagement = () => {
                     aria-required="true"
                   ></textarea>
                 </div>
-
+                {/* 
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -795,7 +795,7 @@ const NotificationScheduleManagement = () => {
                   >
                     Is Prize Money Related?
                   </label>
-                </div>
+                </div> */}
 
                 <div>
                   <label

@@ -335,8 +335,13 @@ const QuestionManagement = () => {
                       {q.question}
                     </td>
                     <td className="p-4 text-gray-900 max-w-lg overflow-hidden text-ellipsis whitespace-nowrap">
-                      [{q.answers[0]}, {q.answers[1]}, {q.answers[2]},
-                      {q.answers[3]}]
+                      [
+                      {q.answers.map((opt, idx) => (
+                        <span key={idx}>
+                          "{opt}"{idx < q.answers.length - 1 ? ", " : ""}
+                        </span>
+                      ))}
+                      ]
                     </td>
                     <td className="p-4 text-gray-900 max-w-lg overflow-hidden text-ellipsis whitespace-nowrap">
                       {q.correct_answer}

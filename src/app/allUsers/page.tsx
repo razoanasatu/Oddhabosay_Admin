@@ -46,6 +46,8 @@ interface ApiUser {
   image: string | null;
   institution_name?: string;
   institution_type?: string;
+  college_name?: string; // <-- Add this line
+  university_name?: string;
   total_prize_money_received: string;
   total_withdrawal: string;
   total_spent: string;
@@ -475,10 +477,10 @@ export default function Dashboard() {
                 Payment
               </TableHead>
               <TableHead className="text-purple-900 text-center font-bold text-sm uppercase tracking-wider">
-                Institution Type
+                College Name
               </TableHead>
               <TableHead className="text-purple-900 text-center font-bold text-sm uppercase tracking-wider">
-                Institution Name
+                University Name
               </TableHead>
               <TableHead className="text-purple-900 text-center  font-bold text-sm uppercase tracking-wider text-center">
                 Actions
@@ -562,22 +564,28 @@ export default function Dashboard() {
                     {user.phone_no}
                   </TableCell>
                   <TableCell className="min-w-[150px]">
-                    <Link href={`/paymentDetails/${user.id}`} passHref>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-md border border-purple-500 text-purple-600 hover:bg-purple-100 px-3 py-1.5 transition-colors duration-150"
-                        title="View Payment Details"
-                      >
-                        <Banknote className="w-5 h-5 mr-1" /> View
-                      </Button>
-                    </Link>
+                    {user.payment_methods && user.payment_methods.length > 0 ? (
+                      <Link href={`/paymentDetails/${user.id}`} passHref>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-md border border-purple-500 text-purple-600 hover:bg-purple-100 px-3 py-1.5 transition-colors duration-150"
+                          title="View Payment Details"
+                        >
+                          <Banknote className="w-5 h-5 mr-1" /> View
+                        </Button>
+                      </Link>
+                    ) : (
+                      <span className="text-gray-400 italic">
+                        Not Available
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="min-w-[150px] text-gray-700 text-center ">
-                    {user.institution_type || "-"}
+                    {user.college_name || "-"}
                   </TableCell>
                   <TableCell className="min-w-[200px] text-gray-700 text-center">
-                    {user.institution_name || "-"}
+                    {user.university_name || "-"}
                   </TableCell>
                   <TableCell className="text-center min-w-[170px]">
                     {" "}
@@ -823,7 +831,8 @@ export default function Dashboard() {
             </button>
 
             <h2 className="text-3xl font-extrabold mb-6 text-center text-purple-900 border-b-2 pb-4">
-              User Challenge Details & Statistics
+              {users.find((u) => u.id === selectedUserId)?.full_name || "User"}{" "}
+              Challenge Details & Statistics
             </h2>
 
             {resultLoading ? (

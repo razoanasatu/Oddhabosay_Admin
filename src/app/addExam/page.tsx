@@ -173,7 +173,7 @@ const ChallengeManagement = () => {
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(
     null
   );
-
+  const [challengeTypeFilter, setChallengeTypeFilter] = useState<string>("all");
   //for direct edit
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [formData, setFormData] = useState<ChallengeFormData>({
@@ -1080,6 +1080,29 @@ const ChallengeManagement = () => {
           </button>
         </div>
 
+        {/* Sort by Challenge Type */}
+        <div className="flex items-center mb-4 gap-2">
+          <label
+            htmlFor="challengeTypeFilter"
+            className="font-medium text-purple-700"
+          >
+            Sort by Challenge Type:
+          </label>
+          <select
+            id="challengeTypeFilter"
+            value={challengeTypeFilter}
+            onChange={(e) => setChallengeTypeFilter(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+          >
+            <option value="all">All</option>
+            <option value="practice">Practice</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="mega">Mega</option>
+            <option value="special_event">Special Event</option>
+          </select>
+        </div>
+
         {/* Error */}
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -1153,6 +1176,12 @@ const ChallengeManagement = () => {
               ) : (
                 challenges &&
                 challenges
+                  .filter(
+                    (c) =>
+                      challengeTypeFilter === "all" ||
+                      c.challenge_type === challengeTypeFilter
+                  )
+
                   .sort((a, b) => b.id - a.id)
                   .map((challenge: Challenge) => (
                     <tr key={challenge.id} className="hover:bg-gray-50">

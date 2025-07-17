@@ -505,14 +505,14 @@ export default function Globalboard() {
             </Button>
           )}
 
-          {selectedChallengeType === "" && (
+          {/* {selectedChallengeType === "" && (
             <Button
               onClick={() => setShowSortingModal(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200"
             >
               See Details
             </Button>
-          )}
+          )} */}
         </div>
       </div>
 

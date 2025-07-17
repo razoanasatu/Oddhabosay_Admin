@@ -1,11 +1,11 @@
 "use client";
+
+import { Plus, RefreshCw, Save, Settings, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-// import { Toggle } from "./ui/toggle"; // Assuming a Toggle component from shadcn/ui or similar - Removed as a custom HTML checkbox is used
-import { Plus, Save, Settings, Trash2, X } from "lucide-react"; // Importing icons
 
 // Define baseUrl - IMPORTANT: Replace with your actual base URL
-import { baseUrl } from "@/utils/constant"; // Replace with your actual base URL, e.g., "http://localhost:3000" or "https://your-domain.com"
+import { baseUrl } from "@/utils/constant";
 
 // Type definitions
 type Subject = {
@@ -15,11 +15,6 @@ type Subject = {
 
 type CustomRatios = {
   [subjectId: string]: number;
-};
-
-type DistributionConfig = {
-  isAutoDistributionEnabled: boolean;
-  customSubjectRatios: CustomRatios;
 };
 
 const QuestionDistribution = () => {
@@ -42,7 +37,8 @@ const QuestionDistribution = () => {
   // Fetch subjects on component mount
   useEffect(() => {
     fetchSubjects();
-    fetchCurrentConfig(); // Fetch current distribution config
+    // NOTE: We cannot fetch the current distribution config as there is no GET API.
+    // The component will now manage the state locally and only POST to save.
   }, []);
 
   // Calculate sum of custom ratios
@@ -53,12 +49,12 @@ const QuestionDistribution = () => {
 
   // --- API Calls ---
 
-  // Fetches the list of subjects
+  // Fetches the list of subjects (assuming this is a separate, valid GET endpoint)
   const fetchSubjects = async () => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch(`${baseUrl}/api/subjects/list`);
+      const response = await fetch(`${baseUrl}/api/subjects`);
       const data = await response.json();
       if (data.success) {
         setSubjects(data.data);
@@ -75,44 +71,7 @@ const QuestionDistribution = () => {
     }
   };
 
-  // Fetches the current distribution configuration
-  const fetchCurrentConfig = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      // Assuming a GET endpoint for config (if not, this part needs adjustment)
-      const response = await fetch(
-        `${baseUrl}/api/distribution-of-questions/config`
-      );
-      const data = await response.json();
-      if (response.ok && data.success) {
-        setIsAutoDistributionEnabled(data.data.isAutoDistributionEnabled);
-        setCustomSubjectRatios(data.data.customSubjectRatios || {});
-      } else {
-        // If no config found or error, default to auto-distribution enabled
-        setIsAutoDistributionEnabled(true);
-        setCustomSubjectRatios({});
-        setError(
-          data.message || "Failed to fetch current distribution config."
-        );
-        toast.warn(
-          "Could not fetch current distribution config. Defaulting to auto-distribution."
-        );
-      }
-    } catch (err) {
-      setIsAutoDistributionEnabled(true);
-      setCustomSubjectRatios({});
-      setError("Error fetching current distribution config. Please try again.");
-      toast.warn(
-        "Error fetching current distribution config. Defaulting to auto-distribution."
-      );
-      console.error("Error fetching config:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Updates the global distribution configuration
+  // Updates the global distribution configuration via POST
   const updateDistributionConfig = async () => {
     setLoading(true);
     setError("");
@@ -131,7 +90,7 @@ const QuestionDistribution = () => {
         isAutoDistributionEnabled,
         customSubjectRatios: isAutoDistributionEnabled
           ? {}
-          : customSubjectRatios, // Send empty if auto-enabled
+          : customSubjectRatios,
       };
 
       const response = await fetch(
@@ -147,7 +106,6 @@ const QuestionDistribution = () => {
       if (data.success || response.ok) {
         toast.success("Distribution configuration updated successfully!");
         setShowConfigModal(false);
-        fetchCurrentConfig(); // Re-fetch to ensure UI is in sync
       } else {
         setError(
           data.message || "Failed to update distribution configuration."
@@ -165,7 +123,7 @@ const QuestionDistribution = () => {
     }
   };
 
-  // Updates the ratio for a specific subject
+  // Updates the ratio for a specific subject via POST
   const updateSpecificSubjectRatio = async () => {
     if (!selectedSubjectForRatio) {
       setError("Please select a subject.");
@@ -201,10 +159,14 @@ const QuestionDistribution = () => {
         toast.success(
           `Ratio for ${selectedSubjectForRatio.name} updated successfully!`
         );
+        // Update the local state to reflect the new ratio
+        setCustomSubjectRatios((prev) => ({
+          ...prev,
+          [selectedSubjectForRatio.id]: ratioValue,
+        }));
         setShowSubjectRatioModal(false);
         setSelectedSubjectForRatio(null);
         setIndividualSubjectRatio("");
-        fetchCurrentConfig(); // Re-fetch to ensure UI is in sync
       } else {
         setError(data.message || "Failed to update specific subject ratio.");
         toast.error(data.message || "Failed to update specific subject ratio.");
@@ -232,7 +194,7 @@ const QuestionDistribution = () => {
     if (!(subject.id in customSubjectRatios)) {
       setCustomSubjectRatios((prev) => ({
         ...prev,
-        [subject.id]: 0, // Initialize with 0 or a default value
+        [subject.id]: 0,
       }));
     }
   };
@@ -245,6 +207,13 @@ const QuestionDistribution = () => {
     });
   };
 
+  // New handler to simulate fetching initial data or resetting locally
+  const handleRefreshConfig = () => {
+    setIsAutoDistributionEnabled(true);
+    setCustomSubjectRatios({});
+    toast.info("Local configuration has been reset to default.");
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 p-6 sm:p-10 font-sans">
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-6 sm:p-8">
@@ -254,6 +223,14 @@ const QuestionDistribution = () => {
             Practice Question Distribution
           </h1>
           <div className="flex gap-3">
+            {/* Added a refresh button to simulate fetching/resetting */}
+            <button
+              onClick={handleRefreshConfig}
+              className="bg-gray-500 hover:bg-gray-600 text-white font-semibold px-6 py-3 rounded-xl flex items-center gap-2 transition-all duration-300 transform hover:scale-105 shadow-lg"
+            >
+              <RefreshCw size={22} strokeWidth={2.5} />
+              Reset Local Config
+            </button>
             <button
               onClick={() => setShowConfigModal(true)}
               className="bg-purple-700 hover:bg-purple-800 text-white font-semibold px-6 py-3 rounded-xl flex items-center gap-2 transition-all duration-300 transform hover:scale-105 shadow-lg"
@@ -288,7 +265,7 @@ const QuestionDistribution = () => {
         {/* Current Configuration Display */}
         <div className="bg-purple-50 p-6 rounded-xl shadow-md mb-8">
           <h2 className="text-2xl font-bold text-purple-800 mb-4 flex items-center gap-2">
-            Current Distribution Status
+            Current Distribution Status (Local)
           </h2>
           <p className="text-lg text-gray-700 mb-2">
             Auto Distribution:{" "}
@@ -410,7 +387,7 @@ const QuestionDistribution = () => {
                                 }
                                 className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm text-center"
                                 placeholder="Ratio (0-1)"
-                                disabled={!(subject.id in customSubjectRatios)} // Disable if not added
+                                disabled={!(subject.id in customSubjectRatios)}
                               />
                               {subject.id in customSubjectRatios ? (
                                 <button

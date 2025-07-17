@@ -10,6 +10,11 @@ type User = {
   phone_no: string;
 };
 
+type Challenge = {
+  id: number;
+  challenge_type: string;
+};
+
 type Transaction = {
   id: number;
   transaction_type: string;
@@ -20,6 +25,7 @@ type Transaction = {
   proof_image_url: string | null;
   description: string;
   user: User;
+  challenge?: Challenge; // 👈 Add this
 };
 
 const TransactionHistory = () => {
@@ -32,6 +38,16 @@ const TransactionHistory = () => {
   const [status, setStatus] = useState("");
   const [image, setImage] = useState<File | null>(null);
 
+  const [bulkType, setBulkType] = useState<"GlobalBoard" | "challenge">(
+    "GlobalBoard"
+  );
+  const [bulkImage, setBulkImage] = useState<File | null>(null);
+  const [bulkChallengeId, setBulkChallengeId] = useState<string>("");
+  const [bulkChallengeOptions, setBulkChallengeOptions] = useState<
+    { id: number; type: string }[]
+  >([]);
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkChallengeIds, setBulkChallengeIds] = useState<string[]>([]);
   const fetchTransactions = async () => {
     setLoading(true);
     try {
@@ -58,6 +74,72 @@ const TransactionHistory = () => {
     setStatus(transaction.transaction_status);
     setImage(null);
     setShowEditModal(true);
+  };
+
+  // Fetch challenge IDs for dropdown (example API, adjust as needed)
+  useEffect(() => {
+    if (bulkType === "challenge") {
+      fetch(`${baseUrl}/api/transaction-history`)
+        .then((res) => res.json())
+        .then((response) => {
+          const transactions = response.data; // ✅ correctly access array
+
+          if (Array.isArray(transactions)) {
+            const uniqueChallenges: { id: number; type: string }[] = [];
+            const seen = new Set();
+
+            transactions.forEach((tx) => {
+              if (tx.challenge && !seen.has(tx.challenge.id)) {
+                uniqueChallenges.push({
+                  id: tx.challenge.id,
+                  type: tx.challenge.challenge_type,
+                });
+                seen.add(tx.challenge.id);
+              }
+            });
+
+            setBulkChallengeOptions(uniqueChallenges);
+          } else {
+            toast.error("Unexpected data format.");
+          }
+        })
+        .catch(() => {
+          toast.error("Failed to fetch challenge IDs.");
+        });
+    }
+  }, [bulkType]);
+
+  const handleBulkApprove = async () => {
+    setBulkLoading(true);
+    const formData = new FormData();
+    if (bulkType === "challenge" && bulkChallengeIds.length > 0) {
+      bulkChallengeIds.forEach((id) => formData.append("challengeIds[]", id));
+    } else {
+      formData.append("transaction_type", "Global Board");
+    }
+
+    try {
+      const response = await fetch(
+        `${baseUrl}/api/transaction-history/admin/update-multiple`,
+        {
+          method: "PATCH",
+          body: formData,
+        }
+      );
+      if (response.ok) {
+        toast.success("Bulk approval successful.");
+        fetchTransactions();
+        setBulkImage(null);
+        setBulkChallengeId("");
+      } else {
+        const data = await response.json();
+        toast.error(data.message || "Bulk approval failed.");
+      }
+    } catch {
+      toast.error("Error during bulk approval.");
+    } finally {
+      setBulkLoading(false);
+    }
   };
 
   const handleUpdate = async () => {
@@ -88,6 +170,7 @@ const TransactionHistory = () => {
     }
   };
 
+  // ...existing code...
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 p-6 sm:p-10">
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-6 sm:p-8">
@@ -95,6 +178,87 @@ const TransactionHistory = () => {
           Transaction History
         </h1>
 
+        {/* Bulk Approve Section */}
+        <div className="mb-8 p-5 bg-indigo-50 rounded-xl shadow flex flex-col gap-6">
+          <h2 className="text-xl font-bold text-indigo-800 mb-2">
+            Bulk Approve Transactions
+          </h2>
+          <div className="flex flex-wrap gap-6 items-end">
+            <div className="flex flex-col gap-2 min-w-[160px]">
+              <label className="font-medium text-gray-700">Type:</label>
+              <select
+                value={bulkType}
+                onChange={(e) => {
+                  setBulkType(e.target.value as "GlobalBoard" | "challenge");
+                  setBulkChallengeIds([]);
+                }}
+                className="px-3 py-2 border rounded-lg bg-white"
+              >
+                <option value="global">Global Board</option>
+                <option value="challenge">Challenge</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-2 min-w-[240px]">
+              <label className="font-medium text-gray-700">
+                Challenge ID(s):
+              </label>
+              <select
+                multiple
+                value={bulkChallengeIds}
+                onChange={(e) =>
+                  setBulkChallengeIds(
+                    Array.from(
+                      e.target.selectedOptions,
+                      (option) => option.value
+                    )
+                  )
+                }
+                className={`px-3 py-2 border rounded-lg bg-white text-sm h-[110px] ${
+                  bulkType === "GlobalBoard"
+                    ? "bg-gray-100 cursor-not-allowed opacity-60"
+                    : ""
+                }`}
+                disabled={bulkType === "GlobalBoard"}
+              >
+                {bulkChallengeOptions.length === 0 ? (
+                  <option disabled>No challenges found</option>
+                ) : (
+                  bulkChallengeOptions.map((ch) => (
+                    <option key={ch.id} value={ch.id}>
+                      {ch.id} &mdash; {ch.type}
+                    </option>
+                  ))
+                )}
+              </select>
+              <span className="text-xs text-gray-500">
+                Hold Ctrl (Windows) or Cmd (Mac) to select multiple.
+              </span>
+            </div>
+            <div className="flex flex-col gap-2 min-w-[180px]">
+              <label className="font-medium text-gray-700">Proof Image:</label>
+              <input
+                type="file"
+                onChange={(e) => setBulkImage(e.target.files?.[0] || null)}
+                className="px-3 py-2 border rounded-lg text-sm"
+              />
+            </div>
+            <button
+              onClick={handleBulkApprove}
+              disabled={
+                bulkLoading ||
+                (bulkType === "challenge" && bulkChallengeIds.length === 0)
+              }
+              className={`px-6 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 transition ${
+                bulkLoading ||
+                (bulkType === "challenge" && bulkChallengeIds.length === 0)
+                  ? "opacity-60 cursor-not-allowed"
+                  : ""
+              }`}
+            >
+              {bulkLoading ? "Approving..." : "Approve"}
+            </button>
+          </div>
+        </div>
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-5 py-3 rounded-lg mb-6 flex items-center shadow-md animate-fade-in">
             <X className="h-5 w-5 mr-3" />
@@ -151,7 +315,7 @@ const TransactionHistory = () => {
                   <td className="px-4 py-3 text-sm">{tx.user.full_name}</td>
                   <td className="px-4 py-3 text-sm">{tx.transaction_type}</td>
                   <td className="px-4 py-3 text-sm font-semibold text-gray-700">
-                    ${tx.amount}
+                    BDT {tx.amount}
                   </td>
                   <td className="px-4 py-3 text-sm">
                     {new Date(tx.transaction_date).toLocaleDateString()}
@@ -232,6 +396,7 @@ const TransactionHistory = () => {
       </div>
     </div>
   );
+  // ...existing code...
 };
 
 export default TransactionHistory;
