@@ -46,6 +46,8 @@ interface ApiUser {
   image: string | null;
   institution_name?: string;
   institution_type?: string;
+  college_name?: string; // <-- Add this line
+  university_name?: string;
   total_prize_money_received: string;
   total_withdrawal: string;
   total_spent: string;
@@ -83,6 +85,11 @@ export default function Dashboard() {
   const [customMessage, setCustomMessage] = useState("");
   const [showBroadcastModal, setShowBroadcastModal] = React.useState(false);
   const [customBroadcastMessage, setCustomBroadcastMessage] =
+    React.useState("");
+
+  const [showFilteredBroadcastModal, setShowFilteredBroadcastModal] =
+    React.useState(false);
+  const [filteredBroadcastMessage, setFilteredBroadcastMessage] =
     React.useState("");
 
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
@@ -245,6 +252,28 @@ export default function Dashboard() {
     } finally {
       setShowBroadcastModal(false);
       setCustomBroadcastMessage("");
+    }
+  };
+
+  const broadcastToFilteredUsers = async (message: string) => {
+    try {
+      const userIds = filteredUsers.map((u) => u.id);
+      if (userIds.length === 0) throw new Error("No users to notify.");
+      const res = await fetch(
+        `${baseUrl}/api/notifications/broadcast-multiple`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userIds, message }),
+        }
+      );
+      if (!res.ok) throw new Error("Failed to broadcast notification.");
+      toast.success("Notification sent to filtered users!");
+    } catch (error) {
+      toast.error((error as Error).message || "An error occurred.");
+    } finally {
+      setShowFilteredBroadcastModal(false);
+      setFilteredBroadcastMessage("");
     }
   };
 
@@ -414,6 +443,13 @@ export default function Dashboard() {
           >
             <Bell className="w-5 h-5" /> Broadcast Message
           </Button>
+
+          <Button
+            onClick={() => setShowFilteredBroadcastModal(true)}
+            className="bg-purple-600 text-white hover:bg-purple-700 px-5 py-2 rounded-md shadow-md transition-all duration-200 flex items-center gap-2"
+          >
+            <Bell className="w-5 h-5" /> Broadcast to Filtered Users
+          </Button>
         </div>
       </div>
 
@@ -441,10 +477,10 @@ export default function Dashboard() {
                 Payment
               </TableHead>
               <TableHead className="text-purple-900 text-center font-bold text-sm uppercase tracking-wider">
-                Institution Type
+                College Name
               </TableHead>
               <TableHead className="text-purple-900 text-center font-bold text-sm uppercase tracking-wider">
-                Institution Name
+                University Name
               </TableHead>
               <TableHead className="text-purple-900 text-center  font-bold text-sm uppercase tracking-wider text-center">
                 Actions
@@ -528,22 +564,28 @@ export default function Dashboard() {
                     {user.phone_no}
                   </TableCell>
                   <TableCell className="min-w-[150px]">
-                    <Link href={`/paymentDetails/${user.id}`} passHref>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-md border border-purple-500 text-purple-600 hover:bg-purple-100 px-3 py-1.5 transition-colors duration-150"
-                        title="View Payment Details"
-                      >
-                        <Banknote className="w-5 h-5 mr-1" /> View
-                      </Button>
-                    </Link>
+                    {user.payment_methods && user.payment_methods.length > 0 ? (
+                      <Link href={`/paymentDetails/${user.id}`} passHref>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-md border border-purple-500 text-purple-600 hover:bg-purple-100 px-3 py-1.5 transition-colors duration-150"
+                          title="View Payment Details"
+                        >
+                          <Banknote className="w-5 h-5 mr-1" /> View
+                        </Button>
+                      </Link>
+                    ) : (
+                      <span className="text-gray-400 italic">
+                        Not Available
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell className="min-w-[150px] text-gray-700 text-center ">
-                    {user.institution_type || "-"}
+                    {user.college_name || "-"}
                   </TableCell>
                   <TableCell className="min-w-[200px] text-gray-700 text-center">
-                    {user.institution_name || "-"}
+                    {user.university_name || "-"}
                   </TableCell>
                   <TableCell className="text-center min-w-[170px]">
                     {" "}
@@ -729,6 +771,53 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Broadcast to Filtered Users Modal */}
+      {showFilteredBroadcastModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 relative animate-scale-in">
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-900 transition-colors text-xl font-bold"
+              onClick={() => setShowFilteredBroadcastModal(false)}
+              aria-label="Close filtered broadcast modal"
+            >
+              ✕
+            </button>
+            <h2 className="text-2xl font-bold text-purple-900 mb-5 border-b pb-3">
+              Broadcast to Filtered Users
+            </h2>
+            <textarea
+              value={filteredBroadcastMessage}
+              onChange={(e) => setFilteredBroadcastMessage(e.target.value)}
+              rows={5}
+              placeholder="Type your message for filtered users..."
+              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 text-gray-800 resize-y text-base"
+              aria-label="Filtered broadcast message"
+            />
+            <div className="mt-6 flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowFilteredBroadcastModal(false)}
+                className="px-5 py-2 rounded-lg text-gray-700 border-gray-300 hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </Button>
+              <Button
+                className="bg-purple-600 text-white hover:bg-purple-700 px-6 py-2 rounded-lg shadow-md transition-all"
+                onClick={() => {
+                  if (filteredBroadcastMessage.trim()) {
+                    broadcastToFilteredUsers(filteredBroadcastMessage);
+                  } else {
+                    toast.error("Please enter a message to broadcast.");
+                  }
+                }}
+              >
+                Send to Filtered Users
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Challenge Results Modal */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -742,7 +831,8 @@ export default function Dashboard() {
             </button>
 
             <h2 className="text-3xl font-extrabold mb-6 text-center text-purple-900 border-b-2 pb-4">
-              User Challenge Details & Statistics
+              {users.find((u) => u.id === selectedUserId)?.full_name || "User"}{" "}
+              Challenge Details & Statistics
             </h2>
 
             {resultLoading ? (

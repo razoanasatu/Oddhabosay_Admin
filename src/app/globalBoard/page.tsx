@@ -10,6 +10,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { baseUrl } from "@/utils/constant";
+import { saveAs } from "file-saver";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import {
   ChevronsLeft,
   ChevronsRight,
@@ -17,11 +20,8 @@ import {
   Filter,
   HelpCircle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
 import Papa from "papaparse";
-import { saveAs } from "file-saver";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { useEffect, useState } from "react";
 
 const API_URL = `${baseUrl}/api/global-board`;
 const CHALLENGES_API_URL = `${baseUrl}/api/challenges/all-challenges-result`;
@@ -505,14 +505,14 @@ export default function Globalboard() {
             </Button>
           )}
 
-          {selectedChallengeType === "" && (
+          {/* {selectedChallengeType === "" && (
             <Button
               onClick={() => setShowSortingModal(true)}
               className="bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200"
             >
               See Details
             </Button>
-          )}
+          )} */}
         </div>
       </div>
 

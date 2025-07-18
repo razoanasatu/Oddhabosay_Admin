@@ -55,7 +55,7 @@ const ParticipationPage: React.FC = () => {
     <div className="max-w-7xl mx-auto p-8 bg-white dark:bg-gray-900 rounded-xl shadow-lg mt-10">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold text-gray-800 dark:text-white">
-          👥 Participants ({year})
+          👥 Participants {/*({year}) */}
         </h2>
         <button
           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium shadow-sm"

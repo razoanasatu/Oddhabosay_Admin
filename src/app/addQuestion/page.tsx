@@ -29,7 +29,7 @@ const QuestionManagement = () => {
     correct_answer: 0,
     subjectId: -1,
     eligibility_flag: ["practice"],
-    score: 0,
+    score: 1,
   });
 
   const [loading, setLoading] = useState(false);
@@ -290,6 +290,12 @@ const QuestionManagement = () => {
                   Question
                 </th>
                 <th className="text-left p-4 text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  Options
+                </th>
+                <th className="text-left p-4 text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                  Correct Answer
+                </th>
+                <th className="text-left p-4 text-sm font-semibold text-gray-700 uppercase tracking-wider">
                   Subject
                 </th>
                 <th className="text-left p-4 text-sm font-semibold text-gray-700 uppercase tracking-wider">
@@ -327,6 +333,18 @@ const QuestionManagement = () => {
                   >
                     <td className="p-4 text-gray-900 max-w-lg overflow-hidden text-ellipsis whitespace-nowrap">
                       {q.question}
+                    </td>
+                    <td className="p-4 text-gray-900 max-w-lg overflow-hidden text-ellipsis whitespace-nowrap">
+                      [
+                      {q.answers.map((opt, idx) => (
+                        <span key={idx}>
+                          "{opt}"{idx < q.answers.length - 1 ? ", " : ""}
+                        </span>
+                      ))}
+                      ]
+                    </td>
+                    <td className="p-4 text-gray-900 max-w-lg overflow-hidden text-ellipsis whitespace-nowrap">
+                      {q.correct_answer}
                     </td>
                     <td className="p-4 text-gray-700">
                       {q.subject?.name || "N/A"}
@@ -446,7 +464,7 @@ const QuestionManagement = () => {
                 ))}
               </select>
 
-              <div>
+              {/* <div>
                 <p className="mb-1 text-sm font-medium text-gray-700">Score</p>
                 <input
                   type="text"
@@ -457,7 +475,7 @@ const QuestionManagement = () => {
                   placeholder="Score for this question"
                   className="w-full border border-gray-300 px-4 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
                 />
-              </div>
+              </div> */}
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                 <button
