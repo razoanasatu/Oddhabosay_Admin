@@ -7,7 +7,7 @@ import {
   Sparkles,
   Trophy,
   User,
-} from "lucide-react"; // Added Archive import
+} from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
@@ -53,8 +53,9 @@ const ParticipationPage: React.FC = () => {
   const [eligibility, setEligibility] = useState<EligibilityRequirement | null>(
     null
   );
-  // Added state for winners
+  // Added state for winners and to toggle archive view
   const [winners, setWinners] = useState<Winner[]>([]);
+  const [showArchive, setShowArchive] = useState(false);
 
   const fetchParticipants = async () => {
     setLoading(true);
@@ -222,14 +223,24 @@ const ParticipationPage: React.FC = () => {
             <Trophy size={36} className="text-yellow-500" />
             Competition Participants
           </h1>
-          <button
-            className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-xl flex items-center gap-2 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
-            onClick={handleReset}
-            disabled={loading}
-          >
-            <RefreshCcw size={20} strokeWidth={2.5} />
-            Reset Data
-          </button>
+          <div className="flex gap-4">
+            <button
+              className="bg-purple-600 hover:bg-purple-700 text-white font-semibold px-6 py-3 rounded-xl flex items-center gap-2 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={() => setShowArchive(!showArchive)}
+              disabled={loading}
+            >
+              <Archive size={20} strokeWidth={2.5} />
+              {showArchive ? "Show Participants" : "Show Archive"}
+            </button>
+            <button
+              className="bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-xl flex items-center gap-2 transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+              onClick={handleReset}
+              disabled={loading}
+            >
+              <RefreshCcw size={20} strokeWidth={2.5} />
+              Reset Data
+            </button>
+          </div>
         </div>
 
         {/* Loading and Error States */}
@@ -267,19 +278,8 @@ const ParticipationPage: React.FC = () => {
           </div>
         )}
 
-        {!loading && filteredData.length === 0 && !error ? (
-          <div className="py-12 text-center text-gray-500 italic">
-            <p className="text-lg">
-              No participants found for this competition.
-            </p>
-            <p className="text-sm mt-2">
-              Check the API connection or add new entries to the competition.
-            </p>
-          </div>
-        ) : null}
-
-        {/* Participants Table */}
-        {!loading && filteredData.length > 0 && (
+        {/* Main Participants Table (Visible if not showing archive) */}
+        {!loading && !showArchive && filteredData.length > 0 && (
           <div className="overflow-x-auto rounded-xl shadow-md border border-gray-100">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-purple-100">
@@ -371,7 +371,6 @@ const ParticipationPage: React.FC = () => {
                         "Loading..."
                       )}
                     </td>
-                    {/* New Actions column with Archive button */}
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => handleArchive(entry.user.id)}
@@ -388,6 +387,69 @@ const ParticipationPage: React.FC = () => {
             </table>
           </div>
         )}
+
+        {/* Archive Table (Visible if showing archive) */}
+        {!loading && showArchive && (
+          <div className="overflow-x-auto rounded-xl shadow-md border border-gray-100">
+            <h2 className="text-2xl font-bold text-purple-900 mb-4 flex items-center gap-2">
+              <Archive size={24} className="text-gray-500" />
+              Archived Winners
+            </h2>
+            {winners.length > 0 ? (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">
+                      <User size={16} className="inline mr-1" />
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-800 uppercase tracking-wider">
+                      Year Won
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {winners.map((winner) => {
+                    const participant = data.find(
+                      (p) => parseInt(p.user.id) === winner.userId
+                    );
+                    return (
+                      <tr key={winner.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {participant?.user.name ||
+                            `User ID: ${winner.userId}`}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {winner.year}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <div className="py-12 text-center text-gray-500 italic">
+                <p className="text-lg">No winners have been archived yet.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* No data message */}
+        {!loading &&
+          (showArchive ? winners.length === 0 : filteredData.length === 0) &&
+          !error && (
+            <div className="py-12 text-center text-gray-500 italic">
+              <p className="text-lg">
+                {showArchive
+                  ? "No winners have been archived yet."
+                  : "No participants found for this competition."}
+              </p>
+              <p className="text-sm mt-2">
+                Check the API connection or add new entries.
+              </p>
+            </div>
+          )}
       </div>
     </div>
   );
