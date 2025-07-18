@@ -1,6 +1,7 @@
 "use client";
 import { baseUrl } from "@/utils/constant";
 import { useEffect, useMemo, useState } from "react";
+import * as XLSX from "xlsx";
 
 type Subject = {
   id: number;
@@ -37,6 +38,90 @@ const QuestionSelector = ({ onSelect }: Props) => {
   const [selectedQuestions, setSelectedQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = async (event) => {
+      const arrayBuffer = event.target?.result as ArrayBuffer;
+      const workbook = XLSX.read(arrayBuffer, { type: "array" });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+      // Map Excel rows to backend-compatible format
+      const formattedQuestions = jsonData.map((row) => {
+        // Prepare eligibility flag: remove "practice" flag if it's uploaded via Excel
+        const eligibilityFlag = row.exam_type
+          ? row.exam_type
+              .split(",")
+              .map((flag: string) => flag.trim())
+              .filter(Boolean)
+          : []; // Default to an empty array if there's no exam_type
+
+        // If this question is coming from Excel, it should not include the "practice" flag
+        const filteredEligibilityFlag = eligibilityFlag.filter(
+          (flag: any) => flag !== "practice"
+        );
+
+        return {
+          question: row.question,
+          answers: [row.option1, row.option2, row.option3, row.option4].filter(
+            Boolean
+          ),
+          correct_answer: Number(row.correct_answer),
+          subjectId:
+            subjects.find(
+              (s) => s.name.toLowerCase() === row.subject?.toLowerCase()
+            )?.id || -1,
+          eligibility_flag: Array.from(new Set(filteredEligibilityFlag)), // Remove "practice" flag
+          score: Number(row.score),
+        };
+      });
+
+      try {
+        setLoading(true);
+        setError("");
+
+        const res = await fetch(`${baseUrl}/api/question-bank/add-multiple`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ questions: formattedQuestions }),
+        });
+
+        const json = await res.json();
+
+        if (res.ok && json.success && Array.isArray(json.data)) {
+          const uploadedQuestions: Question[] = json.data.map((q: any) => ({
+            ...q,
+            subjectId: q.subject?.id || -1,
+            subject: q.subject || null,
+          }));
+
+          // Update question state
+          setQuestions((prev) => [...prev, ...uploadedQuestions]);
+          const newSelected = [...selectedQuestions, ...uploadedQuestions];
+          setSelectedQuestions(newSelected);
+
+          // Pass selected IDs and full data up
+          onSelect(newSelected);
+
+          alert("Questions uploaded successfully!");
+        } else {
+          setError(json.message || "Bulk upload failed.");
+        }
+      } catch (err) {
+        console.error("Upload error:", err);
+        setError("Failed to upload questions.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  };
 
   // Fetch all data
   useEffect(() => {
@@ -130,6 +215,26 @@ const QuestionSelector = ({ onSelect }: Props) => {
               </option>
             ))}
           </select>
+
+          {/* Upload Button */}
+          <div className="flex items-center gap-3">
+            <label
+              htmlFor="excel-upload"
+              className="bg-green-600 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-green-700 transition"
+            >
+              Upload from Excel
+            </label>
+            <input
+              id="excel-upload"
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleExcelUpload}
+              className="hidden"
+            />
+            {loading && (
+              <span className="text-blue-600 text-sm">Uploading...</span>
+            )}
+          </div>
         </div>
 
         {error && (
