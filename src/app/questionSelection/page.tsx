@@ -52,28 +52,34 @@ const QuestionSelector = ({ onSelect }: Props) => {
       const jsonData: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
       // Map Excel rows to backend-compatible format
-      const formattedQuestions = jsonData.map((row) => ({
-        question: row.question,
-        answers: [row.option1, row.option2, row.option3, row.option4].filter(
-          Boolean
-        ),
-        correct_answer: Number(row.correct_answer),
-        subjectId:
-          subjects.find(
-            (s) => s.name.toLowerCase() === row.subject?.toLowerCase()
-          )?.id || -1,
-        eligibility_flag: Array.from(
-          new Set(
-            row.exam_type
-              ? row.exam_type
-                  .split(",")
-                  .map((flag: string) => flag.trim())
-                  .filter(Boolean)
-              : ["practice"]
-          )
-        ),
-        score: Number(row.score),
-      }));
+      const formattedQuestions = jsonData.map((row) => {
+        // Prepare eligibility flag: remove "practice" flag if it's uploaded via Excel
+        const eligibilityFlag = row.exam_type
+          ? row.exam_type
+              .split(",")
+              .map((flag: string) => flag.trim())
+              .filter(Boolean)
+          : []; // Default to an empty array if there's no exam_type
+
+        // If this question is coming from Excel, it should not include the "practice" flag
+        const filteredEligibilityFlag = eligibilityFlag.filter(
+          (flag: any) => flag !== "practice"
+        );
+
+        return {
+          question: row.question,
+          answers: [row.option1, row.option2, row.option3, row.option4].filter(
+            Boolean
+          ),
+          correct_answer: Number(row.correct_answer),
+          subjectId:
+            subjects.find(
+              (s) => s.name.toLowerCase() === row.subject?.toLowerCase()
+            )?.id || -1,
+          eligibility_flag: Array.from(new Set(filteredEligibilityFlag)), // Remove "practice" flag
+          score: Number(row.score),
+        };
+      });
 
       try {
         setLoading(true);
