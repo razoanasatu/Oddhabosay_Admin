@@ -53,17 +53,17 @@ const QuestionSelector = ({ onSelect }: Props) => {
 
       // Map Excel rows to backend-compatible format
       const formattedQuestions = jsonData.map((row) => {
-        // Prepare eligibility flag: remove "practice" flag if it's uploaded via Excel
-        const eligibilityFlag = row.exam_type
+        // Prepare eligibility flag: remove "practice" if it's uploaded via Excel
+        let eligibilityFlag = row.exam_type
           ? row.exam_type
               .split(",")
               .map((flag: string) => flag.trim())
               .filter(Boolean)
           : []; // Default to an empty array if there's no exam_type
 
-        // If this question is coming from Excel, it should not include the "practice" flag
+        // Remove "practice" from eligibility flags if it exists
         const filteredEligibilityFlag = eligibilityFlag.filter(
-          (flag: any) => flag !== "practice"
+          (flag: string) => flag !== "practice"
         );
 
         return {
@@ -76,7 +76,7 @@ const QuestionSelector = ({ onSelect }: Props) => {
             subjects.find(
               (s) => s.name.toLowerCase() === row.subject?.toLowerCase()
             )?.id || -1,
-          eligibility_flag: Array.from(new Set(filteredEligibilityFlag)), // Remove "practice" flag
+          eligibility_flag: Array.from(new Set(filteredEligibilityFlag)), // Remove "practice" flag, retain others
           score: Number(row.score),
         };
       });
