@@ -314,9 +314,9 @@ const ParticipationPage: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-bold text-purple-800 uppercase tracking-wider">
                     Progress
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-bold text-purple-800 uppercase tracking-wider">
+                  {/* <th className="px-6 py-3 text-left text-xs font-bold text-purple-800 uppercase tracking-wider">
                     Actions
-                  </th>
+                  </th> */}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
@@ -371,7 +371,7 @@ const ParticipationPage: React.FC = () => {
                         "Loading..."
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    {/* <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         onClick={() => handleArchive(entry.user.id)}
                         className="text-indigo-600 hover:text-indigo-900 flex items-center gap-1"
@@ -380,7 +380,7 @@ const ParticipationPage: React.FC = () => {
                         <Archive size={16} />
                         Archive
                       </button>
-                    </td>
+                    </td> */}
                   </tr>
                 ))}
               </tbody>
