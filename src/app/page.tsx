@@ -12,7 +12,7 @@ import {
   Title,
   Tooltip,
 } from "chart.js";
-import { useEffect, useMemo, useState } from "react"; // Added useMemo
+import { useEffect, useMemo, useState } from "react";
 import { Bar, Line, Pie } from "react-chartjs-2";
 
 // Register ChartJS components
@@ -28,7 +28,7 @@ ChartJS.register(
   ArcElement
 );
 
-// --- Interface Definitions (No changes needed here, they look good) ---
+// --- Interface Definitions ---
 interface User {
   id: number;
   type: string;
@@ -87,22 +87,34 @@ interface ChallengesData {
   special_events: Challenge[];
 }
 
+interface TransactionSummary {
+  totalAmount: number;
+  totalReceived: number;
+  totalSpent: number;
+}
+
 // --- Dashboard Component ---
 export default function Dashboard() {
   const [totalUsers, setTotalUsers] = useState<number | string | null>(null);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingUsers, setLoadingUsers] = useState(true);
-  const [loadingChallenges, setLoadingChallenges] = useState(true); // New loading state for challenges
+  const [loadingChallenges, setLoadingChallenges] = useState(true);
+  const [loadingTransactions, setLoadingTransactions] = useState(true); // New loading state
   const [challengesData, setChallengesData] = useState<ChallengesData>({
     weekly: [],
     monthly: [],
     mega: [],
     special_events: [],
   });
+  const [transactionSummary, setTransactionSummary] =
+    useState<TransactionSummary | null>(null); // New state for transaction data
   const [selectedYear, setSelectedYear] = useState<number>(
     new Date().getFullYear()
   );
+  const [selectedMonth, setSelectedMonth] = useState<number>(
+    new Date().getMonth() + 1
+  ); // New state for month
   const [availableYears, setAvailableYears] = useState<number[]>([]);
 
   const [cardsData, setCardsData] = useState([
@@ -112,9 +124,24 @@ export default function Dashboard() {
       description:
         "Active users registered on the platform this month across all regions.",
     },
-    // You can add more cards here if your dashboard expands, e.g.:
-    // { title: "Total Challenges", number: null, description: "All challenges created to date." },
-    // { title: "Total Revenue", number: null, description: "Total earnings from challenge fees." },
+    {
+      title: "Total Amount",
+      number: null as number | string | null,
+      description: "Total amount of transactions this month.",
+      color: "bg-green-100", // Added color for visual distinction
+    },
+    {
+      title: "Total Received",
+      number: null as number | string | null,
+      description: "Total amount received this month.",
+      color: "bg-yellow-100", // Added color for visual distinction
+    },
+    {
+      title: "Total Spent",
+      number: null as number | string | null,
+      description: "Total amount spent this month.",
+      color: "bg-red-100", // Added color
+    },
   ]);
 
   useEffect(() => {
@@ -166,7 +193,7 @@ export default function Dashboard() {
     };
 
     const fetchChallenges = async () => {
-      setLoadingChallenges(true); // Set loading true
+      setLoadingChallenges(true);
       try {
         const response = await fetch(
           "https://api.backend.oddhabosay.code-studio4.com/api/challenges/all-challenges"
@@ -174,13 +201,11 @@ export default function Dashboard() {
         const data = await response.json();
 
         if (response.ok && data) {
-          // Assuming data structure is directly the ChallengesData
           setChallengesData(data);
 
-          // Extract available years from the data
           const years = new Set<number>();
           const allChallengesArray = [
-            ...(data.weekly || []), // Use || [] to ensure it's iterable even if a category is missing
+            ...(data.weekly || []),
             ...(data.monthly || []),
             ...(data.mega || []),
             ...(data.special_events || []),
@@ -193,12 +218,10 @@ export default function Dashboard() {
             });
             const sortedYears = Array.from(years).sort((a, b) => b - a);
             setAvailableYears(sortedYears);
-            // Set selectedYear to the most recent available year if it's not already set to a valid one
             if (sortedYears.length > 0 && !sortedYears.includes(selectedYear)) {
               setSelectedYear(sortedYears[0]);
             }
           } else {
-            // If no challenges, default to current year
             const currentYear = new Date().getFullYear();
             setAvailableYears([currentYear]);
             setSelectedYear(currentYear);
@@ -230,31 +253,111 @@ export default function Dashboard() {
         setAvailableYears([currentYear]);
         setSelectedYear(currentYear);
       } finally {
-        setLoadingChallenges(false); // Set loading false
+        setLoadingChallenges(false);
+      }
+    };
+
+    const fetchTransactions = async () => {
+      setLoadingTransactions(true);
+      try {
+        const response = await fetch(
+          "https://api.backend.oddhabosay.code-studio4.com/api/transaction-history/summary",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              year: selectedYear,
+              month: selectedMonth,
+            }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (response.ok && data) {
+          setTransactionSummary(data);
+          setCardsData((prevCardsData) =>
+            prevCardsData.map((card) => {
+              if (card.title === "Total Amount") {
+                return {
+                  ...card,
+                  number: `BDT ${data.totalAmount.toLocaleString()}`,
+                };
+              }
+              if (card.title === "Total Received") {
+                return {
+                  ...card,
+                  number: `BDT ${data.totalReceived.toLocaleString()}`,
+                };
+              }
+              if (card.title === "Total Spent") {
+                return {
+                  ...card,
+                  number: `BDT ${data.totalSpent.toLocaleString()}`,
+                };
+              }
+              return card;
+            })
+          );
+        } else {
+          console.error(
+            "Failed to fetch transaction data or format is incorrect:",
+            data
+          );
+          setTransactionSummary(null);
+          setCardsData((prevCardsData) =>
+            prevCardsData.map((card) => {
+              if (
+                card.title === "Total Amount" ||
+                card.title === "Total Received" ||
+                card.title === "Total Spent"
+              ) {
+                return { ...card, number: "N/A" };
+              }
+              return card;
+            })
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching transaction data:", error);
+        setTransactionSummary(null);
+        setCardsData((prevCardsData) =>
+          prevCardsData.map((card) => {
+            if (
+              card.title === "Total Amount" ||
+              card.title === "Total Received" ||
+              card.title === "Total Spent"
+            ) {
+              return { ...card, number: "N/A" };
+            }
+            return card;
+          })
+        );
+      } finally {
+        setLoadingTransactions(false);
       }
     };
 
     fetchUsers();
     fetchChallenges();
-  }, [selectedYear]); // Re-fetch challenges if selectedYear changes? Or only update availableYears? Let's keep it minimal.
-  // Re-run useEffect only on initial mount. Year changes will filter existing data.
+    fetchTransactions();
+  }, [selectedYear, selectedMonth]); // Re-fetch all data when year or month changes
 
   // Helper to filter challenges by selected year
   const filterChallengesByYear = (challenges: Challenge[]) => {
     return (challenges || []).filter((challenge) => {
-      // Ensure challenges is an array
       const year = new Date(challenge.createdAt).getFullYear();
       return year === selectedYear;
     });
   };
 
-  // --- Chart Data Preparation Functions (Memoized for performance) ---
-
   const prepareBarChartData = useMemo(
     () => (challenges: Challenge[]) => {
       const filteredChallenges = filterChallengesByYear(challenges);
       if (filteredChallenges.length === 0) {
-        return { labels: [], datasets: [] }; // Return empty data if no challenges
+        return { labels: [], datasets: [] };
       }
       const labels = filteredChallenges.map(
         (challenge) => `${challenge.challenge_type} (ID: ${challenge.id})`
@@ -277,7 +380,7 @@ export default function Dashboard() {
       };
     },
     [selectedYear]
-  ); // Recompute when selectedYear changes
+  );
 
   const preparePieChartData = useMemo(
     () => (challenges: Challenge[]) => {
@@ -303,7 +406,7 @@ export default function Dashboard() {
               "rgba(54, 162, 235, 0.6)",
               "rgba(255, 206, 86, 0.6)",
               "rgba(75, 192, 192, 0.6)",
-              "rgba(153, 102, 255, 0.6)", // Added more colors for more slices
+              "rgba(153, 102, 255, 0.6)",
               "rgba(255, 159, 64, 0.6)",
             ],
             borderColor: [
@@ -342,7 +445,7 @@ export default function Dashboard() {
             backgroundColor: "rgba(153, 102, 255, 0.6)",
             borderColor: "rgba(153, 102, 255, 1)",
             borderWidth: 1,
-            tension: 0.1, // Add tension for a smoother line
+            tension: 0.1,
           },
         ],
       };
@@ -350,19 +453,17 @@ export default function Dashboard() {
     [selectedYear]
   );
 
-  // Chart Options (can be customized)
   const chartOptions = {
     responsive: true,
-    maintainAspectRatio: false, // Allows chart to take up full available space
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: "top" as const,
       },
       title: {
-        display: false, // Titles are handled by h2 tags
+        display: false,
       },
       tooltip: {
-        // Basic tooltip customization
         callbacks: {
           label: function (context: any) {
             let label = context.dataset.label || "";
@@ -378,7 +479,6 @@ export default function Dashboard() {
       },
     },
     scales: {
-      // Example: for bar/line charts to ensure starting from 0
       y: {
         beginAtZero: true,
       },
@@ -399,6 +499,25 @@ export default function Dashboard() {
     setSelectedYear(parseInt(event.target.value));
   };
 
+  const handleMonthChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedMonth(parseInt(event.target.value));
+  };
+
+  const months = [
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+  ];
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <header className="bg-purple-900 rounded-sm text-white p-4 shadow-md">
@@ -408,38 +527,52 @@ export default function Dashboard() {
       </header>
 
       <main className="container mx-auto p-4 flex-grow">
-        {/* Year Selector */}
-        <div className="mb-4 flex items-center">
+        {/* Year and Month Selectors */}
+        <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
           <label
             htmlFor="year-select"
             className="mr-2 text-gray-700 font-semibold"
           >
-            Select Year:
+            Select Period:
           </label>
-          {loadingChallenges ? (
-            <p className="text-gray-500">Loading years...</p>
-          ) : (
+          <div className="flex space-x-2">
+            {loadingChallenges ? (
+              <p className="text-gray-500">Loading years...</p>
+            ) : (
+              <select
+                id="year-select"
+                value={selectedYear}
+                onChange={handleYearChange}
+                className="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
+              >
+                {availableYears.length > 0 ? (
+                  availableYears.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))
+                ) : (
+                  <option value={new Date().getFullYear()}>
+                    {new Date().getFullYear()} (No data)
+                  </option>
+                )}
+              </select>
+            )}
             <select
-              id="year-select"
-              value={selectedYear}
-              onChange={handleYearChange}
+              id="month-select"
+              value={selectedMonth}
+              onChange={handleMonthChange}
               className="p-2 border border-gray-300 rounded-md shadow-sm focus:ring-purple-500 focus:border-purple-500"
             >
-              {availableYears.length > 0 ? (
-                availableYears.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                ))
-              ) : (
-                <option value={new Date().getFullYear()}>
-                  {new Date().getFullYear()} (No data)
+              {months.map((month) => (
+                <option key={month.value} value={month.value}>
+                  {month.label}
                 </option>
-              )}
+              ))}
             </select>
-          )}
+          </div>
         </div>
-        <hr className="my-6 border-t border-gray-300" /> {/* Separator */}
+        <hr className="my-6 border-t border-gray-300" />
         {/* Info Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {cardsData.map((card, index) => {
@@ -452,10 +585,9 @@ export default function Dashboard() {
                   card.title === "Total Users"
                     ? "cursor-pointer hover:border-purple-500 transition-all duration-200"
                     : ""
-                }`}
+                } ${card.color || ""}`}
                 onClick={() => handleCardClick(card.title)}
               >
-                {/* Background circles for visual flair */}
                 {isEven ? (
                   <div className="absolute bottom-2 left-2 flex z-0">
                     <div className="w-24 h-24 rounded-full bg-blue-300 opacity-30 -ml-8 -mb-8"></div>
@@ -467,21 +599,22 @@ export default function Dashboard() {
                     <div className="w-24 h-24 rounded-full bg-blue-300 opacity-30 -mr-10 -mt-10"></div>
                   </div>
                 )}
-
                 <div className="relative z-10">
                   <h2 className="text-xl font-semibold text-black">
                     {card.title}
                   </h2>
-                  {card.number !== null ? (
+                  {(loadingUsers && card.title === "Total Users") ||
+                  (loadingTransactions &&
+                    (card.title === "Total Amount" ||
+                      card.title === "Total Received" ||
+                      card.title === "Total Spent")) ? (
+                    <p className="text-xl font-semibold text-gray-400 mt-2">
+                      Loading...
+                    </p>
+                  ) : (
                     <p className="text-3xl font-bold text-black mt-2">
                       {card.number}
                     </p>
-                  ) : (
-                    card.title === "Total Users" && (
-                      <p className="text-xl font-semibold text-gray-400 mt-2">
-                        Loading...
-                      </p>
-                    )
                   )}
                   <p className="text-sm text-gray-500 mt-2">
                     {card.description}
@@ -529,8 +662,6 @@ export default function Dashboard() {
               ) : chart.data.length > 0 &&
                 prepareBarChartData(chart.data).labels.length > 0 ? (
                 <div className="relative h-64">
-                  {" "}
-                  {/* Added a fixed height for consistent chart size */}
                   <Bar
                     data={prepareBarChartData(chart.data)}
                     options={chartOptions}
@@ -661,8 +792,6 @@ export default function Dashboard() {
       {/* User Details Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-          {" "}
-          {/* Changed overlay color */}
           <div className="relative p-8 bg-white w-11/12 md:w-3/4 lg:w-2/3 h-5/6 mx-auto rounded-lg shadow-xl flex flex-col">
             <h2 className="text-2xl font-bold text-black mb-6">
               All User Details
@@ -680,8 +809,6 @@ export default function Dashboard() {
               </p>
             ) : allUsers.length > 0 ? (
               <div className="overflow-auto flex-grow border border-gray-200 rounded-md">
-                {" "}
-                {/* Changed to overflow-auto for scroll */}
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>
